@@ -1,0 +1,10 @@
+{
+  "requireOperatorBeforeLineBreak": true,
+  "disallowMultipleVarDecl": true,
+
+  "excludeFiles": [
+    "**/node_modules/**",
+    "./coverage",
+    "./temp"
+  ]
+}

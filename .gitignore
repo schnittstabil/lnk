@@ -1,0 +1,15 @@
+# Logs
+logs
+*.log
+
+# Coverage directory used by tools like istanbul
+coverage
+
+# Dependency directory
+node_modules
+
+# temp
+temp
+
+# npm pack
+lnks-*.*.*.tgz
