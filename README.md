@@ -6,10 +6,10 @@ Install
 =======
 
 ```sh
-// CLI
+# CLI
 $ [sudo] npm install lnk --global
 
-// API
+# API
 $ npm install lnk --save
 ```
 
@@ -34,8 +34,9 @@ $ lnk assets/* dist
 or:
 ```js
 var lnk = require('lnk');
+var glob = require('glob').sync; // npm install glob --save-dev
 
-lnk('assets/*', 'dist', function(err) {
+lnk(glob('assets/*'), 'dist', function(err) {
   console.log('done');
 });
 ```
