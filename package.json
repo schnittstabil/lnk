@@ -1,6 +1,6 @@
 {
   "name": "lnk",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Create links between files",
   "keywords": [
     "link",
@@ -62,9 +62,11 @@
   "devDependencies": {
     "coveralls": "^2.11.2",
     "del": "^1.1.1",
-    "eslint": "^0.16.2",
+    "eslint": "^0.17.1",
+    "editorconfig-tools": "^0.1.1",
     "gazer-color": "0.0.3",
-    "ghooks": "^0.2.5",
+    "ghooks": "^0.3.0",
+    "globstar": "^1.0.0",
     "istanbul": "^0.3.6",
     "jscs": "^1.11.3",
     "mocha": "^2.1.0",
@@ -75,8 +77,6 @@
   "dependencies": {
     "array-series": "^0.1.5",
     "each-async": "^1.1.1",
-    "editorconfig-tools": "^0.1.1",
-    "globstar": "^1.0.0",
     "mkdirp": "^0.5.0",
     "npmlog": "^1.1.0",
     "object-assign": "^2.0.0",
