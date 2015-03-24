@@ -20,7 +20,7 @@ var defaults = {
 
 function preprocessTarget(target, opts) {
   // NB symlinks: do not use path.resolve here
-  if (!pathIsAbsolute(target) && opts.cwd) {
+  if (opts.cwd && !pathIsAbsolute(target)) {
     target = path.join(opts.cwd, target);
   }
   return target;
@@ -41,25 +41,24 @@ function generateLinkPath(target, directory, opts) {
   }
 }
 
-function assertSaveOverwrite(target, directory, cb) {
+function assertSaveOverwrite(target, linkPath, cb) {
   fs.stat(target, function targetStatCb(targetErr, targetStat) {
     if (targetErr) {
       if (targetErr.code === 'ENOENT' || targetErr.code === 'ELOOP') {
-        // target and directory cannot be same file
+        // target and linkPath cannot be same file
         return cb();
       }
       return cb(targetErr);
     }
-    fs.stat(directory, function directoryStatCb(dirErr, linkStat) {
-      if (dirErr) {
-        if (dirErr.code === 'ENOENT' || dirErr.code === 'ELOOP') {
+    fs.stat(linkPath, function linkPathStatCb(linkErr, linkStat) {
+      if (linkErr) {
+        if (linkErr.code === 'ENOENT' || linkErr.code === 'ELOOP') {
           return cb();
         }
-        return cb(dirErr);
+        return cb(linkErr);
       }
-      if (targetStat.ino === linkStat.ino &&
-        targetStat.dev === linkStat.dev) {
-        cb(new Error('`' + target + '` and `' + directory + '` are the same'));
+      if (targetStat.ino === linkStat.ino && targetStat.dev === linkStat.dev) {
+        cb(new Error('`' + target + '` and `' + linkPath + '` are the same'));
       } else {
         cb();
       }
@@ -67,29 +66,28 @@ function assertSaveOverwrite(target, directory, cb) {
   });
 }
 
-function assertSaveOverwriteSync(target, directory) {
+function assertSaveOverwriteSync(target, linkPath) {
   var targetStat;
   var linkStat;
   try {
     targetStat = fs.statSync(target);
   } catch (err) {
     if (err.code === 'ENOENT' || err.code === 'ELOOP') {
-      // target and directory cannot be same file
+      // target and linkPath cannot be same file
       return;
     }
     throw err;
   }
   try {
-    linkStat = fs.statSync(directory);
+    linkStat = fs.statSync(linkPath);
   } catch (err) {
     if (err.code === 'ENOENT' || err.code === 'ELOOP') {
       return;
     }
     throw err;
   }
-  if (targetStat.ino === linkStat.ino &&
-    targetStat.dev === linkStat.dev) {
-    throw new Error('`' + target + '` and `' + directory + '` are the same');
+  if (targetStat.ino === linkStat.ino && targetStat.dev === linkStat.dev) {
+    throw new Error('`' + target + '` and `' + linkPath + '` are the same');
   }
 }
 
