@@ -1,4 +1,4 @@
-# lnk [![Build Status](https://travis-ci.org/schnittstabil/lnk.svg?branch=master)](https://travis-ci.org/schnittstabil/lnk) [![Coverage Status](https://coveralls.io/repos/schnittstabil/lnk/badge.svg?branch=master)](https://coveralls.io/r/schnittstabil/lnk?branch=master)
+# lnk [![Build Status](https://travis-ci.org/schnittstabil/lnk.svg?branch=master)](https://travis-ci.org/schnittstabil/lnk) [![Coverage Status](https://coveralls.io/repos/schnittstabil/lnk/badge.svg?branch=master)](https://coveralls.io/r/schnittstabil/lnk?branch=master) [![XO code style](https://img.shields.io/badge/code_style-XO-5ed9c7.svg)](https://github.com/sindresorhus/xo)
 
 > Create links between files.
 
@@ -49,7 +49,7 @@ $ tree
 │       └── vendor.css
 └── dist
     ├── favicon.ico              // hard link to assets/favicon.ico
-    └── style -> ../assets/style // directory junction on windows
+    └── style -> ../assets/style // soft link; directory junction on windows
 
 4 directories, 4 files
 ```
@@ -179,8 +179,7 @@ Type: `function`
 ## Related
 
 * [cpy](https://github.com/sindresorhus/cpy) if you need to copy multiple files
-* [rimraf](https://github.com/isaacs/rimraf) if you need to delete files and directories
-* [mkdirp](https://github.com/substack/node-mkdirp) if you need to create a directory recursively
+* [del](https://github.com/sindresorhus/del) if you need to delete files and folders
 
 ## License
 

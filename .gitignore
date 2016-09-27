@@ -1,15 +1,7 @@
-# Logs
-logs
-*.log
-
-# Coverage directory used by tools like istanbul
-coverage
-
-# Dependency directory
-node_modules
-
-# temp
-test/temp
-
-# npm pack
-lnks-*.*.*.tgz
+/.nyc_output/
+/coverage/
+/test/temp/
+/node_modules/
+/logs/
+/*.log
+/lnks-*.*.*.tgz

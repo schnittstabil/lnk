@@ -1,12 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import {spawn} from 'child_process';
 import test from 'ava';
 
+import execa from 'execa';
 import mkdirp from 'mkdirp';
 import rewire from 'rewire';
 
-import lnk from '../';
 import {assertIdenticalFile, assertEqualFilePath} from './helpers/assert';
 import {before, beforeEach, after} from './helpers/hooks';
 
@@ -16,7 +15,6 @@ test.before(before(__filename));
 test.after(after(__filename));
 
 test.beforeEach(t => {
-	// this.timeout(5000);
 	const logs = [];
 	const cli = rewire('../cli');
 
@@ -31,7 +29,6 @@ test.beforeEach(t => {
 
 	return beforeEach(__filename)();
 });
-
 
 test.serial.cb('should error a message on missing TARGETS', t => {
 	t.context.cli([], status => {
@@ -84,18 +81,10 @@ test.serial.cb('should error a message on unknown option', t => {
 	});
 });
 
-test.serial.cb('should error a message and return a non-zero exit status on errors', t => {
-	let err = '';
-	const sut = spawn('node', [CLI]); // missing TARGET Error
-	sut.stderr.setEncoding('utf8');
-	sut.stderr.on('data', data => {
-		err += data;
-	});
-	sut.on('close', status => {
-		t.not(status, 0);
-		t.not(err, '');
-		t.end();
-	});
+test.serial('should error a message and return a non-zero exit status on errors', t => {
+	const err = t.throws(execa('node', [CLI])); // missing TARGET Error
+	t.not(err.message, '');
+	t.not(err.code, 0);
 });
 
 test.serial.cb('should error a message on --symbolic with --hard', t => {

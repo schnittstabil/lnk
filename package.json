@@ -3,6 +3,7 @@
   "version": "0.4.4",
   "description": "Create links between files",
   "license": "MIT",
+  "repository": "schnittstabil/lnk",
   "keywords": [
     "link",
     "symlink",
@@ -27,7 +28,11 @@
   },
   "author": {
     "name": "Michael Mayer",
-    "email": "michael@schnittstabil.de"
+    "email": "michael@schnittstabil.de",
+    "url": "schnittstabil.de"
+  },
+  "engines": {
+    "node": ">=4"
   },
   "dependencies": {
     "array-series": "^0.1.5",
@@ -36,25 +41,32 @@
     "npmlog": "^1.1.0",
     "object-assign": "^4.0",
     "path-is-absolute": "^1.0.0",
-    "pify": "^2.3.0",
     "rimraf": "^2.2.8",
     "yargs": "^3.4.5"
   },
   "devDependencies": {
-    "ava": "^0.16.0",
-    "coveralls": "^2.11.2",
+    "ava": "^0.16",
+    "coveralls": "^2.11",
     "del": "^2.2",
-    "rewire": "^2.3.1",
-    "uuid": "^2.0.1",
+    "execa": "^0.4.0",
+    "nyc": "^8.3.0",
+    "pify": "^2.3",
+    "rewire": "^2.3",
+    "uuid": "^2.0",
     "xo": "^0.16.0"
   },
   "main": "index.js",
   "bin": {
     "lnk": "./cli.js"
   },
+  "files": [
+    "cli.js",
+    "index.js",
+    "link.js"
+  ],
   "scripts": {
-    "test": "xo && ava",
-    "cover": "istanbul cover node_modules/mocha/bin/_mocha -- -R spec",
-    "upload-coveralls": "cat coverage/lcov.info | coveralls"
+    "test": "xo && nyc ava",
+    "clean": "rimraf .nyc_output/ coverage/",
+    "coverage-html": "nyc ava && nyc report --reporter=html"
   }
 }
