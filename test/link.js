@@ -1,133 +1,131 @@
-/* eslint-env mocha */
-/* eslint no-underscore-dangle: 0 */
-'use strict';
-const assert = require('assert');
-const join = require('path').join;
-const uuid = require('uuid');
-const rewire = require('rewire');
+/* eslint ava/no-identical-title: off */
+import {join} from 'path';
+import test from 'ava';
 
-const lnk = require('../');
-const link = require('../link');
-const hooks = require('./utils/hooks');
+import uuid from 'uuid';
+import rewire from 'rewire';
 
-describe('link', () => {
-	beforeEach(new hooks.tempCwd.BeforeEach(__filename));
-	afterEach(new hooks.tempCwd.AfterEach(__filename));
-	after(new hooks.tempCwd.After(__filename));
+import lnk from '../';
+import link from '../link';
+import {before, beforeEach, after} from './helpers/hooks';
 
-	it('getTypes should include `default`', () => {
-		assert(link.getTypes().indexOf('default') > -1);
-	});
+test.before(before(__filename));
+test.beforeEach(beforeEach(__filename));
+test.after(after(__filename));
 
-	[
-		'get',
-		'getSync',
-		'getTypes'
-	].forEach(key => {
-		it('.' + key + ' should be a function', () => {
-			assert.strictEqual(typeof link[key], 'function');
-		});
+const isFunction = (t, value) => {
+	t.is(typeof value, 'function');
+};
+isFunction.title = (_, value) => `.${value} should be a function`;
 
-		it('getTypes should not include `' + key + '`', () => {
-			assert(link.getTypes().indexOf(key) === -1);
-		});
-	});
+const includes = (t, array, searchElement) => {
+	t.true(array.includes(searchElement));
+};
+includes.title = (providedTitle, _, searchElement) => `${providedTitle} should include ${searchElement}`;
 
-	it('should be extensible', done => {
-		const type = uuid.v1();
+const notIncludes = (t, array, searchElement) => {
+	t.false(array.includes(searchElement));
+};
+notIncludes.title = (providedTitle, _, searchElement) => `${providedTitle} should include ${searchElement}`;
 
-		link[type] = (target, linkPath, cb) => {
-			assert.strictEqual(target, 'TARGET');
-			assert.strictEqual(linkPath, join('DIRECTORY', 'TARGET'));
+test.serial(isFunction, link.get);
+test.serial(isFunction, link.getSync);
+test.serial(isFunction, link.getTypes);
+
+test.serial('getTypes()', includes, link.getTypes(), 'default');
+
+test.serial('getTypes()', notIncludes, link.getTypes(), 'get');
+test.serial('getTypes()', notIncludes, link.getTypes(), 'getSync');
+test.serial('getTypes()', notIncludes, link.getTypes(), 'getTypes');
+
+test.serial.cb('should be extensible', t => {
+	const type = uuid.v1();
+
+	link[type] = (target, linkPath, cb) => {
+		t.is(target, 'TARGET');
+		t.is(linkPath, join('DIRECTORY', 'TARGET'));
+		cb();
+	};
+
+	lnk('TARGET', 'DIRECTORY', {type: type}, t.end);
+});
+
+test.serial.cb('.junction should symlink relative on modern OSs', t => {
+	let symLinked = false;
+	const sut = rewire('../link');
+
+	sut.__set__('isWin', false);
+	sut.__set__('fs', {
+		symlink: (target, path, type, cb) => {
+			symLinked = true;
+			t.is(target, join('..', 'TARGET', 'a'));
 			cb();
-		};
-
-		lnk('TARGET', 'DIRECTORY', {type: type}, done);
+		}
 	});
-
-	describe('.junction', () => {
-		it('should symlink relative on modern OSs', done => {
-			let symLinked = false;
-			const sut = rewire('../link');
-
-			sut.__set__('isWin', false);
-			sut.__set__('fs', {
-				symlink: (target, path, type, cb) => {
-					symLinked = true;
-					assert.strictEqual(target, join('..', 'TARGET', 'a'));
-					cb();
-				}
-			});
-			sut.junction('TARGET/a', 'DIRECTORY/a', err => {
-				assert.ifError(err);
-				assert.ok(symLinked);
-				done();
-			});
-		});
-
-		it('should create directory junction on Windows', done => {
-			let linked = false;
-			const sut = rewire('../link');
-
-			sut.__set__('isWin', true);
-			sut.__set__('fs', {
-				symlink: (target, path, type, cb) => {
-					linked = true;
-					assert.strictEqual(type, 'junction');
-					cb();
-				}
-			});
-			sut.junction('TARGET/a', 'DIRECTORY/a', err => {
-				assert.ifError(err);
-				assert.ok(linked);
-				done();
-			});
-		});
+	sut.junction('TARGET/a', 'DIRECTORY/a', err => {
+		t.ifError(err);
+		t.true(symLinked);
+		t.end();
 	});
+});
 
-	describe('sync', () => {
-		it('should be extensible (globally)', () => {
-			const type = uuid.v1();
+test.serial.cb('.junction should create directory junction on Windows', t => {
+	let linked = false;
+	const sut = rewire('../link');
 
-			link[type + 'Sync'] = (target, linkPath) => {
-				assert.strictEqual(target, 'TARGET');
-				assert.strictEqual(linkPath, join('DIRECTORY', 'TARGET'));
-			};
-
-			lnk.sync('TARGET', 'DIRECTORY', {type: type});
-		});
-
-		describe('.junction', () => {
-			it('should symlink relative on modern OSs', () => {
-				let symLinked = false;
-				const sut = rewire('../link');
-
-				sut.__set__('isWin', false);
-				sut.__set__('fs', {
-					symlinkSync: (target, path, type) => {
-						symLinked = true;
-						assert.strictEqual(type, 'junction');
-						assert.strictEqual(target, join('..', 'TARGET', 'a'));
-					}
-				});
-				sut.junctionSync('TARGET/a', 'DIRECTORY/a');
-				assert.ok(symLinked);
-			});
-
-			it('should create directory junction on Windows', () => {
-				let linked = false;
-				const sut = rewire('../link');
-
-				sut.__set__('isWin', true);
-				sut.__set__('fs', {
-					symlinkSync: (target, path, type) => {
-						linked = true;
-						assert.strictEqual(type, 'junction');
-					}
-				});
-				sut.junctionSync('TARGET/a', 'DIRECTORY/a');
-				assert.ok(linked);
-			});
-		});
+	sut.__set__('isWin', true);
+	sut.__set__('fs', {
+		symlink: (target, path, type, cb) => {
+			linked = true;
+			t.is(type, 'junction');
+			cb();
+		}
 	});
+	sut.junction('TARGET/a', 'DIRECTORY/a', err => {
+		t.ifError(err);
+		t.true(linked);
+		t.end();
+	});
+});
+
+test.serial('sync should be extensible (globally)', t => {
+	const type = uuid.v1();
+
+	link[type + 'Sync'] = (target, linkPath) => {
+		t.is(target, 'TARGET');
+		t.is(linkPath, join('DIRECTORY', 'TARGET'));
+	};
+
+	lnk.sync('TARGET', 'DIRECTORY', {type: type});
+});
+
+test.serial('sync.junction should symlink relative on modern OSs', t => {
+	let symLinked = false;
+	const sut = rewire('../link');
+
+	sut.__set__('isWin', false);
+	sut.__set__('fs', {
+		symlinkSync: (target, path, type) => {
+			symLinked = true;
+			t.is(type, 'junction');
+			t.is(target, join('..', 'TARGET', 'a'));
+		}
+	});
+	sut.junctionSync('TARGET/a', 'DIRECTORY/a');
+	t.true(symLinked);
+});
+
+test.serial('sync.junction should create directory junction on Windows', t => {
+	let linked = false;
+	const sut = rewire('../link');
+
+	sut.__set__('isWin', true);
+	sut.__set__('fs', {
+		symlinkSync: (target, path, type) => {
+			linked = true;
+			t.is(type, 'junction');
+		}
+	});
+	sut.junctionSync('TARGET/a', 'DIRECTORY/a');
+	t.true(linked);
 });

@@ -9,7 +9,7 @@ coverage
 node_modules
 
 # temp
-temp
+test/temp
 
 # npm pack
 lnks-*.*.*.tgz

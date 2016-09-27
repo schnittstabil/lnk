@@ -34,15 +34,16 @@
     "each-async": "^1.1.1",
     "mkdirp": "^0.5.0",
     "npmlog": "^1.1.0",
-    "object-assign": "^2.0.0",
+    "object-assign": "^4.0",
     "path-is-absolute": "^1.0.0",
+    "pify": "^2.3.0",
     "rimraf": "^2.2.8",
     "yargs": "^3.4.5"
   },
   "devDependencies": {
+    "ava": "^0.16.0",
     "coveralls": "^2.11.2",
-    "del": "^1.1.1",
-    "mocha": "^2.1.0",
+    "del": "^2.2",
     "rewire": "^2.3.1",
     "uuid": "^2.0.1",
     "xo": "^0.16.0"
@@ -52,9 +53,8 @@
     "lnk": "./cli.js"
   },
   "scripts": {
-    "test": "mocha",
+    "test": "xo && ava",
     "cover": "istanbul cover node_modules/mocha/bin/_mocha -- -R spec",
-    "upload-coveralls": "cat coverage/lcov.info | coveralls",
-    "lint": "xo"
+    "upload-coveralls": "cat coverage/lcov.info | coveralls"
   }
 }
