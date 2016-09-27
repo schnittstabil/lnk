@@ -1,9 +1,8 @@
-lnk [![Build Status](https://travis-ci.org/schnittstabil/lnk.svg?branch=master)](https://travis-ci.org/schnittstabil/lnk) [![Coverage Status](https://coveralls.io/repos/schnittstabil/lnk/badge.svg?branch=master)](https://coveralls.io/r/schnittstabil/lnk?branch=master)
-===
-Create links between files.
+# lnk [![Build Status](https://travis-ci.org/schnittstabil/lnk.svg?branch=master)](https://travis-ci.org/schnittstabil/lnk) [![Coverage Status](https://coveralls.io/repos/schnittstabil/lnk/badge.svg?branch=master)](https://coveralls.io/r/schnittstabil/lnk?branch=master)
 
-Install
-=======
+> Create links between files.
+
+## Install
 
 ```sh
 # CLI
@@ -13,8 +12,7 @@ $ [sudo] npm install lnk --global
 $ npm install lnk --save
 ```
 
-Usage
-=====
+## Usage
 
 ```sh
 $ tree
@@ -56,8 +54,7 @@ $ tree
 4 directories, 4 files
 ```
 
-CLI
-===
+## CLI
 
 ```
 $ lnk --help
@@ -86,8 +83,7 @@ Report lnk bugs to <https://github.com/schnittstabil/lnk/issues>
 lnk home page: <https://github.com/schnittstabil/lnk>
 ```
 
-Npm Scripts
-===========
+## Npm Scripts
 
 For platform independent glob support use [globstar](https://github.com/schnittstabil/globstar):
 
@@ -109,42 +105,42 @@ Link your `assets/*` files:
 $ npm run link-assets
 ```
 
-API
-===
+## API
+
 `lnk` provides a convenience wrapper for the fs link and symlink functions.
 
-## lnk(targets, directory, [opts], callback)
+### lnk(targets, directory, [opts], callback)
 
-## lnk.sync (targets, directory, [opts])
+### lnk.sync (targets, directory, [opts])
 
-### targets
+#### targets
 Type: `string` or `array` of `string`s
 
 Targets of the links.
 
-### directory
+#### directory
 Type: `string`
 
 Destination directory.
 
-### opts
+#### opts
 Type: `object`
 
-#### cwd
+##### cwd
 Type: `string`
 
 Default: `process.cwd()`
 
 The current working directory for `targets` and `directory`.
 
-#### force
+##### force
 Type: `boolean`
 
 Default: `false`
 
 Overwrite existing files.
 
-#### type
+##### type
 Type: `string`
 
 Values: `'default'`, `'hard'`, `'symbolic'`, `'junction'` or `'directory'`
@@ -155,7 +151,7 @@ By default, `lnk` tries to create hard links, if this fails for a target because
 it is a directory `lnk` tries to create a directory junction (symbolic link on
 modern OSs) for this target.
 
-#### parents
+##### parents
 Type: `boolean`
 
 Default: `false`
@@ -170,26 +166,22 @@ lnk('assets/style/*.css', 'dist/assets/style', ...);
 lnk('assets/style/*.css', 'dist', {parents: true}, ...);
 ```
 
-#### log
+##### log
 Type: `function`
 
-Default: `function noop(level, prefix, message) {}`
+Default: `(level, prefix, message) => {}`
 
 A logger function, you may want to use `console.log` or `npmlog.log`, see [npmlog documentation](https://github.com/npm/npmlog) for details.
 
-### callback(err)
+#### callback(err)
 Type: `function`
 
-Related
-=======
+## Related
 
 * [cpy](https://github.com/sindresorhus/cpy) if you need to copy multiple files
 * [rimraf](https://github.com/isaacs/rimraf) if you need to delete files and directories
 * [mkdirp](https://github.com/substack/node-mkdirp) if you need to create a directory recursively
 
-License
--------
+## License
 
-Copyright © 2015 Michael Mayer
-
-Licensed under the [MIT license](LICENSE).
+MIT © [Michael Mayer](http://schnittstabil.de)

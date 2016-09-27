@@ -1,107 +1,100 @@
 'use strict';
 var isWin = process.platform === 'win32';
 var fs = require('fs');
-var pathLib = require('path');
+const pathLib = require('path');
 
-function relative(from, to) {
-  return pathLib.relative(pathLib.dirname(from), pathLib.resolve(to));
-}
+const relative = (from, to) => pathLib.relative(pathLib.dirname(from), pathLib.resolve(to));
 
-exports.hard = function(target, path, cb) {
-  fs.link(target, path, cb);
+exports.hard = (target, path, cb) => {
+	fs.link(target, path, cb);
 };
 
-exports.hardSync = function(target, path) {
-  return fs.linkSync(target, path);
+exports.hardSync = (target, path) => {
+	return fs.linkSync(target, path);
 };
 
-exports.symbolic = function(target, path, cb) {
-  target = relative(path, target);
-  fs.symlink(target, path, cb);
+exports.symbolic = (target, path, cb) => {
+	target = relative(path, target);
+	fs.symlink(target, path, cb);
 };
 
-exports.symbolicSync = function(target, path) {
-  target = relative(path, target);
-  return fs.symlinkSync(target, path);
+exports.symbolicSync = (target, path) => {
+	target = relative(path, target);
+	return fs.symlinkSync(target, path);
 };
 
-exports.directory = function(target, path, cb) {
-  target = relative(path, target);
-  fs.symlink(target, path, 'dir', cb);
+exports.directory = (target, path, cb) => {
+	target = relative(path, target);
+	fs.symlink(target, path, 'dir', cb);
 };
 
-exports.directorySync = function(target, path) {
-  target = relative(path, target);
-  return fs.symlinkSync(target, path, 'dir');
+exports.directorySync = (target, path) => {
+	target = relative(path, target);
+	return fs.symlinkSync(target, path, 'dir');
 };
 
-exports.junction = function(target, path, cb) {
-  // junction paths are always absolute
-  if (!isWin) {
-    target = relative(path, target);
-  }
-  fs.symlink(target, path, 'junction', cb);
+exports.junction = (target, path, cb) => {
+	// junction paths are always absolute
+	if (!isWin) {
+		target = relative(path, target);
+	}
+	fs.symlink(target, path, 'junction', cb);
 };
 
-exports.junctionSync = function(target, path) {
-  // junction paths are always absolute
-  if (!isWin) {
-    target = relative(path, target);
-  }
-  return fs.symlinkSync(target, path, 'junction');
+exports.junctionSync = (target, path) => {
+	// junction paths are always absolute
+	if (!isWin) {
+		target = relative(path, target);
+	}
+	return fs.symlinkSync(target, path, 'junction');
 };
 
-exports.default = function(target, path, cb) {
-  exports.hard(target, path, function(err) {
-    if (!err || err.code !== 'EPERM') {
-      return cb(err);
-    }
-    exports.junction(target, path, cb);
-  });
+exports.default = (target, path, cb) => {
+	exports.hard(target, path, err => {
+		if (!err || err.code !== 'EPERM') {
+			return cb(err);
+		}
+		exports.junction(target, path, cb);
+	});
 };
 
-exports.defaultSync = function(target, path) {
-  try {
-    return exports.hardSync(target, path);
-  } catch (err) {
-    if (err.code === 'EPERM') {
-      return exports.junctionSync(target, path);
-    }
-    throw err;
-  }
+exports.defaultSync = (target, path) => {
+	try {
+		return exports.hardSync(target, path);
+	} catch (err) {
+		if (err.code === 'EPERM') {
+			return exports.junctionSync(target, path);
+		}
+		throw err;
+	}
 };
 
 Object.defineProperty(exports, 'get', {
-  value: function(type) {
-    var linkFn = exports[type];
+	value: type => {
+		var linkFn = exports[type];
 
-    if (linkFn) {
-      return linkFn.bind(exports);
-    }
+		if (linkFn) {
+			return linkFn.bind(exports);
+		}
 
-    throw new Error('unknown link type: `' + type + '`');
-  },
+		throw new Error('unknown link type: `' + type + '`');
+	}
 });
 
 Object.defineProperty(exports, 'getSync', {
-  value: function(type) {
-    return exports.get(type + 'Sync');
-  },
+	value: type => exports.get(type + 'Sync')
 });
 
 Object.defineProperty(exports, 'getTypes', {
-  value: function() {
-    var suffix = 'Sync';
-    var types = [];
-    var name;
+	value: () => {
+		const suffix = 'Sync';
+		const types = [];
 
-    for (name in exports) {
-      if (typeof exports[name] === 'function' &&
-          name.slice(-suffix.length) !== suffix) {
-
-        types.push(name);
-      }
-    }
-    return types;
-  },
+		for (let name in exports) {
+			if (typeof exports[name] === 'function' && name.slice(-suffix.length) !== suffix) {
+				types.push(name);
+			}
+		}
+		return types;
+	}
 });
