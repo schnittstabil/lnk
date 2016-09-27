@@ -1,166 +1,161 @@
 #!/usr/bin/env node
 'use strict';
-
-const path = require('path');
-const EOL = require('os').EOL;
+const meow = require('meow');
 var npmlog = require('npmlog');
-const objectAssign = require('object-assign');
-const yargs = require('yargs');
 
-const link = require('./link');
 const packageJson = require('./package.json');
 const lnk = require('./');
 
-const cli = yargs.usage([
-	'Create links between files.',
-	'',
-	'Usage: $0 [OPTION]... TARGET... DIRECTORY',
-	'',
-	'By default, $0 tries to create hard links, if this fails for a ' +
-	'TARGET because it is a directory $0 tries to create a directory ' +
-	'junction (symbolic link on modern OSs) for this TARGET.'
-].join(EOL))
-// force
-.boolean('f')
-.alias({f: ['force']})
-.describe('f', 'Overwrite existing files')
-// hard
-.boolean('h')
-.alias({h: ['hard']})
-.describe('h', 'Create hard links instead of default behavior')
-// symbolic
-.boolean('s')
-.alias({s: ['symbolic']})
-.describe('s', 'Create symbolic links instead of default behavior')
-// junction
-.boolean('j')
-.alias({j: ['junction']})
-.describe('j', 'Create directory junctions ' +
-	'(symbolic links on modern OSs) instead of default behavior')
-// dir
-.boolean('d')
-.alias({d: ['directory']})
-.describe('d', 'Create directory symbolic links ' +
-	'(symbolic links on modern OSs) instead of default behavior')
-// parents
-.boolean('p')
-.alias({p: ['parents']})
-.describe('p', 'Use full source file name under DIRECTORY')
-// verbose
-.count('v')
-.alias('v', 'verbose')
-.describe('v', 'Explain what is being done')
-// version
-.version(packageJson.version, 'version', 'Display version information')
-// help
-.help('help')
-// epilog
-.epilog([
-	'Report lnk bugs to <' + packageJson.bugs.url + '>',
-	'lnk home page: <' + packageJson.homepage + '>'
-].join(EOL))
-.strict();
+const help = `Usage: lnk [OPTION]... TARGET... DIRECTORY
+
+By default, lnk tries to create hard links, if this fails for a TARGET
+because it is a directory lnk tries to create a directory junction
+(symbolic link on modern OSs) for this TARGET.
+
+Options:
+    -f, --force      Overwrite existing files
+    -h, --hard       Create hard links instead of default behavior
+    -s, --symbolic   Create symbolic links instead of default behavior
+    -j, --junction   Create directory junctions (symbolic links on
+                     modern OSs) instead of default behavior
+    -d, --directory  Create directory symbolic links (symbolic links on
+                     modern OSs) instead of default behavior
+    -p, --parents    Use full source file name under DIRECTORY
+    --debug          Turn on debug output
+    -v, --verbose    Explain what is being done
+    --version        Display version information
+    --help           Show help
+
+Report lnk bugs to ${packageJson.bugs.url}
+lnk home page: ${packageJson.homepage}
+`;
+
+const options = ['f', 'force', 'h', 'hard', 's', 'symbolic', 'j', 'junction', 'd', 'directory', 'p', 'parents', 'debug', 'v', 'verbose', 'version', 'help'];
+
+const scanArgv = argv => meow({
+	argv,
+	help
+}, {
+	alias: {
+		f: 'force',
+		h: 'hard',
+		s: 'symbolic',
+		j: 'junction',
+		d: 'directory',
+		p: 'parents',
+		v: 'verbose'
+	},
+	boolean: [
+		'force',
+		'hard',
+		'symbolic',
+		'junction',
+		'directory',
+		'parents',
+		'debug',
+		'verbose'
+	]
+});
+
+const parseLinkType = flags => {
+	const types = lnk.getTypes().filter(t => flags[t]);
+
+	switch (types.length) {
+		case 0:
+			return 'default';
+		case 1:
+			return types[0];
+		default:
+			throw new Error('cannot combine --' + types[0] + ' and --' + types[1]);
+	}
+};
+
+const parseLogger = flags => {
+	npmlog.level = 'info';
+	if (flags.debug) {
+		npmlog.level = 'silly';
+	}	else if (flags.verbose) {
+		npmlog.level = 'verbose';
+	}
+
+	return npmlog.log.bind(npmlog);
+};
+
+const parseFlags = flags => {
+	Object.keys(flags).forEach(flag => {
+		if (options.indexOf(flag) === -1) {
+			throw new Error(`Unknown argument: --${flag}`);
+		}
+	});
+
+	const opts = flags;
+	opts.type = parseLinkType(flags);
+	opts.log = parseLogger(flags);
+
+	return {opts};
+};
+
+const parseInput = input => {
+	const inputLen = input.length;
+
+	return {
+		directory: inputLen > 1 ? input.slice(-1)[0] : undefined,
+		targets: inputLen > 0 ? input.slice(0, -1) : undefined
+	};
+};
 
 const parseArgv = argv => {
-	let err = null;
-	let type;
+	const cli = scanArgv(argv);
 
-	// set defaults
-	const args = objectAssign({
-		_: [],
-		$0: path.relative(process.cwd(), __filename),
-		verbose: 0
-	}, cli.fail(function yargsFail(message) {
-		err = new Error(message);
-		err.name = 'ArgsError';
-	}).parse(argv));
+	return Object.assign(parseInput(cli.input), parseFlags(cli.flags));
+};
 
-	// link type
-	link.getTypes().forEach(key => {
-		if (args[key]) {
-			if (type && !err) {
-				err = new Error('cannot combine --' + type + ' and --' + key);
-				err.name = 'ArgsError';
-			}
-			type = key;
+const errorHandler = exit => err => {
+	if (err) {
+		if (npmlog.level === 'silly') {
+			npmlog.log('error', 'lnk', err);
+		} else {
+			npmlog.log('error', 'lnk', err.message);
 		}
-		delete args[key];
-	});
 
-	// result
-	const result = err || {};
-	result.$0 = args.$0;
-	result.opts = args;
+		// force info
+		const logLevel = npmlog.level;
+		npmlog.level = 'info';
+		npmlog.log('info', 'lnk', 'Try lnk --help` for more information');
+		npmlog.level = logLevel;
 
-	// verbose
-	args.verbose = 2 - Math.max(2 - args.verbose, 0); // 0 <= verbose <= 2
-	npmlog.level = ['info', 'verbose', 'silly'][args.verbose];
-	result.opts.log = npmlog.log.bind(npmlog);
-
-	if (args._.length > 0) {
-		result.targets = args._.slice(0, -1);
+		npmlog.log('verbose', `lnk@${packageJson.version}`, __filename);
+		exit(1);
+		return;
 	}
-
-	if (args._.length > 1) {
-		result.directory = args._.slice(-1)[0];
-	}
-
-	result.opts.type = type ? type : 'default';
-
-	// remove non-opts
-	Object.keys(result.opts).filter(opt => {
-		switch (opt) {
-			case '$0':
-			case 'verbose':
-				return true;
-			default:
-				return opt.length === 1;
-		}
-	}).forEach(flag => {
-		delete result.opts[flag];
-	});
-
-	return result;
+	exit(0);
 };
 
 const main = (argv, exit) => {
-	const errorHandler = err => {
-		if (err) {
-			if (npmlog.level === 'silly') {
-				npmlog.log('error', 'lnk', err);
-			} else {
-				npmlog.log('error', 'lnk', err.message);
-			}
-			// override log level
-			npmlog.level = 'info';
-			npmlog.log('info', 'lnk', 'Try `' + argv.$0 + ' --help` for ' +
-				'more information');
-			npmlog.log('verbose', 'lnk@' + packageJson.version, __filename);
-			exit(1);
-			return;
-		}
-		exit(0);
-	};
-
-	argv = parseArgv(argv);
-
-	if (argv instanceof Error) {
-		errorHandler(argv);
-		return;
-	}
+	const cb = errorHandler(exit);
+	let cmd;
 
 	npmlog.log('silly', 'lnk', 'argv: %j', argv);
 
 	try {
-		lnk(argv.targets, argv.directory, argv.opts, errorHandler);
+		cmd = parseArgv(argv);
 	} catch (err) {
-		errorHandler(err);
+		cb(err);
+		return;
+	}
+
+	npmlog.log('silly', 'lnk', 'cmd: %j', cmd);
+
+	try {
+		lnk(cmd.targets, cmd.directory, cmd.opts, cb);
+	} catch (err) {
+		cb(err);
+		return;
 	}
 };
 
 module.exports = main;
 
-/* istanbul ignore if: coverd by test/cli.js (spawn) */
 if (require.main === module) {
 	main(process.argv.slice(2), process.exit.bind(process));
 }

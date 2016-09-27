@@ -1,9 +1,8 @@
 'use strict';
-const path = require('path');
 var fs = require('fs');
+const path = require('path');
 const rimraf = require('rimraf');
 const mkdirp = require('mkdirp');
-const assign = require('object-assign');
 const forEach = require('each-async');
 const series = require('array-series');
 const pathIsAbsolute = require('path-is-absolute');
@@ -111,7 +110,7 @@ const lnk = (targets, directory, opts, cb) => {
 	assertArgument(cb, 'cb');
 
 	targets = Array.isArray(targets) ? targets : [targets];
-	opts = assign({}, defaults, opts);
+	opts = Object.assign({}, defaults, opts);
 
 	const linkFn = link.get(opts.type);
 	const logLnk = (level, linkPath, targetPath, done) => {
@@ -152,7 +151,7 @@ const lnkSync = (targets, directory, opts) => {
 	assertArgument(directory, 'directory');
 
 	targets = Array.isArray(targets) ? targets : [targets];
-	opts = assign({}, defaults, opts);
+	opts = Object.assign({}, defaults, opts);
 
 	const linkFn = link.getSync(opts.type);
 	const linkTarget = target => {
@@ -182,3 +181,4 @@ const lnkSync = (targets, directory, opts) => {
 
 module.exports = lnk;
 module.exports.sync = lnkSync;
+module.exports.getTypes = () => link.getTypes();

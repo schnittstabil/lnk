@@ -20,6 +20,7 @@ exports.symbolic = (target, path, cb) => {
 
 exports.symbolicSync = (target, path) => {
 	target = relative(path, target);
+
 	return fs.symlinkSync(target, path);
 };
 
@@ -30,6 +31,7 @@ exports.directory = (target, path, cb) => {
 
 exports.directorySync = (target, path) => {
 	target = relative(path, target);
+
 	return fs.symlinkSync(target, path, 'dir');
 };
 
@@ -38,6 +40,7 @@ exports.junction = (target, path, cb) => {
 	if (!isWin) {
 		target = relative(path, target);
 	}
+
 	fs.symlink(target, path, 'junction', cb);
 };
 
@@ -46,6 +49,7 @@ exports.junctionSync = (target, path) => {
 	if (!isWin) {
 		target = relative(path, target);
 	}
+
 	return fs.symlinkSync(target, path, 'junction');
 };
 
@@ -54,6 +58,7 @@ exports.default = (target, path, cb) => {
 		if (!err || err.code !== 'EPERM') {
 			return cb(err);
 		}
+
 		exports.junction(target, path, cb);
 	});
 };
@@ -65,6 +70,7 @@ exports.defaultSync = (target, path) => {
 		if (err.code === 'EPERM') {
 			return exports.junctionSync(target, path);
 		}
+
 		throw err;
 	}
 };
@@ -95,6 +101,7 @@ Object.defineProperty(exports, 'getTypes', {
 				types.push(name);
 			}
 		}
+
 		return types;
 	}
 });

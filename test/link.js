@@ -19,12 +19,12 @@ const isFunction = (t, value) => {
 isFunction.title = (_, value) => `.${value} should be a function`;
 
 const includes = (t, array, searchElement) => {
-	t.true(array.includes(searchElement));
+	t.not(array.indexOf(searchElement), -1);
 };
 includes.title = (providedTitle, _, searchElement) => `${providedTitle} should include ${searchElement}`;
 
 const notIncludes = (t, array, searchElement) => {
-	t.false(array.includes(searchElement));
+	t.is(array.indexOf(searchElement), -1);
 };
 notIncludes.title = (providedTitle, _, searchElement) => `${providedTitle} should include ${searchElement}`;
 
