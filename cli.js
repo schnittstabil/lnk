@@ -107,11 +107,18 @@ const parseInput = input => {
 const parseArgv = argv => {
 	const cli = scanArgv(argv);
 
-	return Object.assign(parseInput(cli.input), parseFlags(cli.flags));
+	return Object.assign(parseFlags(cli.flags), parseInput(cli.input));
 };
 
-const errorHandler = exit => err => {
-	if (err) {
+const main = argv => Promise.resolve(argv)
+	.then(argv => {
+		npmlog.log('silly', 'lnk', 'argv: %j', argv);
+		const cmd = parseArgv(argv);
+		npmlog.log('silly', 'lnk', 'cmd: %j', cmd);
+
+		return lnk(cmd.targets, cmd.directory, cmd.opts);
+	})
+	.catch(err => {
 		if (npmlog.level === 'silly') {
 			npmlog.log('error', 'lnk', err);
 		} else {
@@ -121,41 +128,17 @@ const errorHandler = exit => err => {
 		// force info
 		const logLevel = npmlog.level;
 		npmlog.level = 'info';
-		npmlog.log('info', 'lnk', 'Try lnk --help` for more information');
+		npmlog.log('info', 'lnk', 'Try `lnk --help` for more information');
 		npmlog.level = logLevel;
 
-		npmlog.log('verbose', `lnk@${packageJson.version}`, __filename);
-		exit(1);
-		return;
-	}
-	exit(0);
-};
+		npmlog.log('verbose', 'lnk', `lnk@${packageJson.version}`, __filename);
 
-const main = (argv, exit) => {
-	const cb = errorHandler(exit);
-	let cmd;
-
-	npmlog.log('silly', 'lnk', 'argv: %j', argv);
-
-	try {
-		cmd = parseArgv(argv);
-	} catch (err) {
-		cb(err);
-		return;
-	}
-
-	npmlog.log('silly', 'lnk', 'cmd: %j', cmd);
-
-	try {
-		lnk(cmd.targets, cmd.directory, cmd.opts, cb);
-	} catch (err) {
-		cb(err);
-		return;
-	}
-};
+		throw err;
+	})
+	.then(() => 0, () => 1);
 
 module.exports = main;
 
 if (require.main === module) {
-	main(process.argv.slice(2), process.exit.bind(process));
+	main(process.argv.slice(2)).then(status => process.exit(status));
 }

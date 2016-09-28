@@ -11,6 +11,13 @@ import {before, beforeEach, after} from './helpers/hooks';
 
 const CLI = path.join(__dirname, '..', 'cli.js');
 
+const logsContain = (logs, level, regex) => logs.reduce((found, entry) => {
+	const lvl = entry[0];
+	const msg = entry[2];
+
+	return found || (level === lvl && regex.test(msg));
+}, false);
+
 test.before(before(__filename));
 test.after(after(__filename));
 
@@ -30,96 +37,67 @@ test.beforeEach(t => {
 	return beforeEach(__filename)();
 });
 
-test.serial.cb('should error a message on missing TARGETS', t => {
-	t.context.cli([], status => {
-		let found = false;
-		t.context.logs.forEach(entry => {
-			const level = entry[0];
-			const msg = entry[2];
-			if (/targets/i.test(msg)) {
-				t.is(level, 'error');
-				found = true;
-			}
-		});
-		t.true(found);
-		t.truthy(status);
-		t.end();
-	});
+test.serial('should error a message on missing TARGETS', async t => {
+	const status = await t.context.cli([]);
+	t.not(status, 0);
+	t.true(logsContain(t.context.logs, 'error', /targets/i));
 });
 
-test.serial.cb('should error a message on missing DIRECTORY', t => {
-	t.context.cli(['target'], status => {
-		let found = false;
-		t.context.logs.forEach(entry => {
-			const level = entry[0];
-			const msg = entry[2];
-			if (/directory/i.test(msg)) {
-				t.is(level, 'error');
-				found = true;
-			}
-		});
-		t.true(found);
-		t.truthy(status);
-		t.end();
-	});
+test.serial('should error a message on missing DIRECTORY', async t => {
+	const status = await t.context.cli(['target']);
+	t.not(status, 0);
+	t.true(logsContain(t.context.logs, 'error', /directory/i));
 });
 
-test.serial.cb('should error a message on unknown option', t => {
-	t.context.cli(['--symbolix', 'TARGET', 'DEST'], status => {
-		let found = false;
-		t.context.logs.forEach(entry => {
-			const level = entry[0];
-			const msg = entry[2];
-			if (/symbolix/.test(msg)) {
-				t.is(level, 'error');
-				found = true;
-			}
-		});
-		t.true(found);
-		t.truthy(status);
-		t.end();
-	});
+test.serial('should error a message on unknown option', async t => {
+	const status = await t.context.cli(['--symbolix', 'TARGET', 'DEST']);
+	t.not(status, 0);
+	t.true(logsContain(t.context.logs, 'error', /symbolix/));
 });
 
-test.serial('should error a message and return a non-zero exit status on errors', t => {
-	const err = t.throws(execa('node', [CLI])); // missing TARGET Error
+test.serial('should error a message and return a non-zero exit status on errors', async t => {
+	const err = await t.throws(execa('node', [CLI])); // missing TARGET Error
 	t.not(err.message, '');
 	t.not(err.code, 0);
 });
 
-test.serial.cb('should error a message on --symbolic with --hard', t => {
-	t.context.cli(['--symbolic', '--hard', 'TARGET', 'DEST'], status => {
-		let found = false;
-		t.context.logs.forEach(entry => {
-			const level = entry[0];
-			const msg = entry[2];
-			if (/(symbolic.+hard)|(hard.+symbolic)/.test(msg)) {
-				t.is(level, 'error');
-				found = true;
-			}
-		});
-		t.true(found);
-		t.truthy(status);
-		t.end();
-	});
+test.serial('should error a message on --symbolic with --hard', async t => {
+	const status = await t.context.cli(['--symbolic', '--hard', 'TARGET', 'DEST']);
+	t.not(status, 0);
+	t.true(logsContain(t.context.logs, 'error', /(symbolic.+hard)|(hard.+symbolic)/));
 });
 
-test.serial.cb('should link a file', t => {
+test.serial('should link a file', async t => {
 	mkdirp.sync('DEST/');
 	fs.writeFileSync('a', '');
-	t.context.cli(['a', 'DEST'], status => {
-		t.ifError(status);
-		assertIdenticalFile('DEST/a', 'a');
-		t.end();
-	});
+
+	await t.context.cli(['a', 'DEST']);
+
+	assertIdenticalFile('DEST/a', 'a');
 });
 
-test.serial.cb('should symlink a file', t => {
+test.serial('should symlink a file', async t => {
 	mkdirp.sync('DEST');
 	fs.writeFileSync('a', '');
-	t.context.cli(['--symbolic', 'a', 'DEST'], status => {
-		t.ifError(status);
-		assertEqualFilePath('DEST/a', 'a');
-		t.end();
-	});
+
+	await t.context.cli(['--symbolic', 'a', 'DEST']);
+
+	assertEqualFilePath('DEST/a', 'a');
+});
+
+test.serial('should info log a helpful message on error', async t => {
+	const status = await t.context.cli([]);
+	t.not(status, 0);
+	t.true(logsContain(t.context.logs, 'info', /lnk --help/));
+});
+
+test.serial('should verbose log the version on error', async t => {
+	const status = await t.context.cli(['--verbose']);
+	t.not(status, 0);
+	t.true(logsContain(t.context.logs, 'verbose', /lnk@[0-9]+\.[0-9]+\.[0-9]+/));
+});
+
+test.serial('should debug log sth', async t => {
+	const status = await t.context.cli(['--debug']);
+	t.true(logsContain(t.context.logs, 'silly', /./));
 });

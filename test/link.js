@@ -2,8 +2,8 @@
 import {join} from 'path';
 import test from 'ava';
 
-import uuid from 'uuid';
 import rewire from 'rewire';
+import uuid from 'uuid';
 
 import lnk from '../';
 import link from '../link';
@@ -38,19 +38,19 @@ test.serial('getTypes()', notIncludes, link.getTypes(), 'get');
 test.serial('getTypes()', notIncludes, link.getTypes(), 'getSync');
 test.serial('getTypes()', notIncludes, link.getTypes(), 'getTypes');
 
-test.serial.cb('should be extensible', t => {
+test.serial('should be extensible', async t => {
 	const type = uuid.v1();
 
-	link[type] = (target, linkPath, cb) => {
+	link[type] = (target, linkPath) => new Promise(resolve => {
 		t.is(target, 'TARGET');
 		t.is(linkPath, join('DIRECTORY', 'TARGET'));
-		cb();
-	};
+		resolve();
+	});
 
-	lnk('TARGET', 'DIRECTORY', {type: type}, t.end);
+	await lnk('TARGET', 'DIRECTORY', {type: type});
 });
 
-test.serial.cb('.junction should symlink relative on modern OSs', t => {
+test.serial('.junction should symlink relative on modern OSs', async t => {
 	let symLinked = false;
 	const sut = rewire('../link');
 
@@ -62,14 +62,13 @@ test.serial.cb('.junction should symlink relative on modern OSs', t => {
 			cb();
 		}
 	});
-	sut.junction('TARGET/a', 'DIRECTORY/a', err => {
-		t.ifError(err);
-		t.true(symLinked);
-		t.end();
-	});
+
+	await sut
+		.junction('TARGET/a', 'DIRECTORY/a')
+		.then(() => t.true(symLinked));
 });
 
-test.serial.cb('.junction should create directory junction on Windows', t => {
+test.serial('.junction should create directory junction on Windows', async t => {
 	let linked = false;
 	const sut = rewire('../link');
 
@@ -81,11 +80,10 @@ test.serial.cb('.junction should create directory junction on Windows', t => {
 			cb();
 		}
 	});
-	sut.junction('TARGET/a', 'DIRECTORY/a', err => {
-		t.ifError(err);
-		t.true(linked);
-		t.end();
-	});
+
+	await sut
+		.junction('TARGET/a', 'DIRECTORY/a')
+		.then(() => t.true(linked));
 });
 
 test.serial('sync should be extensible (globally)', t => {

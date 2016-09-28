@@ -32,11 +32,11 @@ $ lnk assets/* dist
 or:
 ```js
 var lnk = require('lnk');
-var glob = require('glob').sync; // npm install glob --save-dev
+var globby = require('globby'); // npm install globby --save
 
-lnk(glob('assets/*'), 'dist', function(err) {
-  console.log('done');
-});
+globby('assets/*')
+  .then(assets => lnk(assets, 'dist'))
+  .then(() => console.log('done'));
 ```
 
 ```sh
@@ -58,29 +58,31 @@ $ tree
 
 ```
 $ lnk --help
-Create links between files.
 
-Usage: lnk [OPTION]... TARGET... DIRECTORY
+  Create links between files
 
-By default, lnk tries to create hard links, if this fails for a TARGET because
-it is a directory lnk tries to create a directory junction (symbolic link on
-modern OSs) for this TARGET.
+  Usage: lnk [OPTION]... TARGET... DIRECTORY
 
-Options:
-  -f, --force      Overwrite existing files
-  -h, --hard       Create hard links instead of default behavior
-  -s, --symbolic   Create symbolic links instead of default behavior
-  -j, --junction   Create directory junctions (symbolic links on modern OSs)
-                   instead of default behavior
-  -d, --directory  Create directory symbolic links (symbolic links on modern
-                   OSs) instead of default behavior
-  -p, --parents    Use full source file name under DIRECTORY
-  -v, --verbose    Explain what is being done
-  --version        Display version information
-  --help           Show help
+  By default, lnk tries to create hard links, if this fails for a TARGET
+  because it is a directory lnk tries to create a directory junction
+  (symbolic link on modern OSs) for this TARGET.
 
-Report lnk bugs to <https://github.com/schnittstabil/lnk/issues>
-lnk home page: <https://github.com/schnittstabil/lnk>
+  Options:
+      -f, --force      Overwrite existing files
+      -h, --hard       Create hard links instead of default behavior
+      -s, --symbolic   Create symbolic links instead of default behavior
+      -j, --junction   Create directory junctions (symbolic links on
+                       modern OSs) instead of default behavior
+      -d, --directory  Create directory symbolic links (symbolic links on
+                       modern OSs) instead of default behavior
+      -p, --parents    Use full source file name under DIRECTORY
+      --debug          Turn on debug output
+      -v, --verbose    Explain what is being done
+      --version        Display version information
+      --help           Show help
+
+  Report lnk bugs to https://github.com/schnittstabil/lnk/issues
+  lnk home page: https://github.com/schnittstabil/lnk
 ```
 
 ## Npm Scripts
@@ -109,9 +111,13 @@ $ npm run link-assets
 
 `lnk` provides a convenience wrapper for the fs link and symlink functions.
 
-### lnk(targets, directory, [opts], callback)
+### lnk(targets, directory, [opts])
+
+Returns a `Promise`.
 
 ### lnk.sync (targets, directory, [opts])
+
+Synchronous version of `lnk`.
 
 #### targets
 Type: `string` or `array` of `string`s
@@ -173,8 +179,6 @@ Default: `(level, prefix, message) => {}`
 
 A logger function, you may want to use `console.log` or `npmlog.log`, see [npmlog documentation](https://github.com/npm/npmlog) for details.
 
-#### callback(err)
-Type: `function`
 
 ## Related
 

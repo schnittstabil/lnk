@@ -1,22 +1,20 @@
 'use strict';
-var isWin = process.platform === 'win32';
 var fs = require('fs');
 const pathLib = require('path');
 
+const pify = require('pify');
+
+var isWin = process.platform === 'win32';
 const relative = (from, to) => pathLib.relative(pathLib.dirname(from), pathLib.resolve(to));
 
-exports.hard = (target, path, cb) => {
-	fs.link(target, path, cb);
-};
+exports.hard = pify((target, path, cb) => fs.link(target, path, cb));
 
-exports.hardSync = (target, path) => {
-	return fs.linkSync(target, path);
-};
+exports.hardSync = (target, path) => fs.linkSync(target, path);
 
-exports.symbolic = (target, path, cb) => {
+exports.symbolic = pify((target, path, cb) => {
 	target = relative(path, target);
 	fs.symlink(target, path, cb);
-};
+});
 
 exports.symbolicSync = (target, path) => {
 	target = relative(path, target);
@@ -24,10 +22,10 @@ exports.symbolicSync = (target, path) => {
 	return fs.symlinkSync(target, path);
 };
 
-exports.directory = (target, path, cb) => {
+exports.directory = pify((target, path, cb) => {
 	target = relative(path, target);
 	fs.symlink(target, path, 'dir', cb);
-};
+});
 
 exports.directorySync = (target, path) => {
 	target = relative(path, target);
@@ -35,14 +33,14 @@ exports.directorySync = (target, path) => {
 	return fs.symlinkSync(target, path, 'dir');
 };
 
-exports.junction = (target, path, cb) => {
+exports.junction = pify((target, path, cb) => {
 	// junction paths are always absolute
 	if (!isWin) {
 		target = relative(path, target);
 	}
 
 	fs.symlink(target, path, 'junction', cb);
-};
+});
 
 exports.junctionSync = (target, path) => {
 	// junction paths are always absolute
@@ -53,13 +51,13 @@ exports.junctionSync = (target, path) => {
 	return fs.symlinkSync(target, path, 'junction');
 };
 
-exports.default = (target, path, cb) => {
-	exports.hard(target, path, err => {
-		if (!err || err.code !== 'EPERM') {
-			return cb(err);
+exports.default = (target, path) => {
+	return exports.hard(target, path).catch(err => {
+		if (err.code === 'EPERM') {
+			return exports.junction(target, path);
 		}
 
-		exports.junction(target, path, cb);
+		throw err;
 	});
 };
 

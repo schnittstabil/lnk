@@ -3,287 +3,212 @@ import path from 'path';
 import test from 'ava';
 
 import mkdirp from 'mkdirp';
+import pify from 'pify';
 import rewire from 'rewire';
 
 import lnk from '../';
 import {assertIdenticalFile, assertEqualFilePath} from './helpers/assert';
 import {before, beforeEach, after} from './helpers/hooks';
 
+const fsP = pify(fs);
 const isWin = process.platform === 'win32';
-const noop = () => {};
 
 test.before(before(__filename));
 test.beforeEach(beforeEach(__filename));
 test.after(after(__filename));
 
-test.serial('should throw an Error on missing TARGET', t => {
-	t.throws(() => lnk(undefined, undefined, noop));
+test.serial('should throw an Error on missing TARGET', async t => {
+	await t.throws(lnk(undefined, undefined));
 });
 
-test.serial('should throw an Error on missing DIRECTORY', t => {
-	t.throws(() => lnk('TARGET', undefined, noop));
+test.serial('should throw an Error on missing DIRECTORY', async t => {
+	await t.throws(lnk('TARGET', undefined));
 });
 
-test.serial.cb('should not throw an Error on empty TARGETs', t => {
-	lnk([], 'DEST', t.end);
+test.serial('should not throw an Error on empty TARGETs', async t => {
+	await t.notThrows(lnk([], 'DEST'));
 });
 
-test.serial('should throw an Error for an unknown link type', t => {
-	t.throws(() => {
-		lnk('a', 'DEST/', {type: 'UNKNOWN_TYPE'}, noop);
-	}, /UNKNOWN_TYPE/);
+test.serial('should throw an Error for an unknown link type', async t => {
+	await t.throws(lnk('a', 'DEST/', {type: 'UNKNOWN_TYPE'}, /UNKNOWN_TYPE/));
 });
 
-test.serial.cb('should link a file', t => {
+test.serial('should link a file', async () => {
 	mkdirp.sync('DEST/');
 	fs.writeFileSync('a', '');
-	lnk('a', 'DEST/', err => {
-		t.ifError(err);
-		assertIdenticalFile('DEST/a', 'a');
-		t.end();
-	});
+
+	await lnk('a', 'DEST/');
+	assertIdenticalFile('DEST/a', 'a');
 });
 
-test.serial.cb('should create DEST', t => {
+test.serial('should create DEST', async () => {
 	fs.writeFileSync('a', '');
-	lnk('a', 'DEST/', err => {
-		t.ifError(err);
-		assertIdenticalFile('DEST/a', 'a');
-		t.end();
-	});
+
+	await lnk('a', 'DEST/');
+	assertIdenticalFile('DEST/a', 'a');
 });
 
-test.serial.cb('should symlink a file', t => {
+test.serial('should symlink a file', async () => {
 	fs.writeFileSync('a', '');
-	lnk('a', 'DEST', {type: 'symbolic'}, err => {
-		t.ifError(err);
-		assertEqualFilePath('DEST/a', 'a');
-		t.end();
-	});
+
+	await lnk('a', 'DEST', {type: 'symbolic'});
+	assertEqualFilePath('DEST/a', 'a');
 });
 
-test.serial.cb('should directory link a directory', t => {
-	mkdirp.sync('SRC');
-	lnk('SRC', 'DEST', {type: 'directory'}, err => {
-		t.ifError(err);
-		assertEqualFilePath('DEST/SRC', 'SRC');
-		t.end();
-	});
-});
-
-test.serial.cb('should junction link a directory', t => {
+test.serial('should directory link a directory', async () => {
 	mkdirp.sync('SRC');
 
-	lnk('SRC', 'DEST', {type: 'junction'}, err => {
-		t.ifError(err);
-		t.is(
-			fs.readlinkSync('DEST/SRC'),
-			isWin ? path.resolve('SRC') + path.sep : path.join('..', 'SRC')
-		);
-		assertEqualFilePath('DEST/SRC', 'SRC');
-		t.end();
-	});
+	await lnk('SRC', 'DEST', {type: 'directory'});
+	assertEqualFilePath('DEST/SRC', 'SRC');
 });
 
-test.serial.cb('should respect cwd', t => {
+test.serial('should junction link a directory', async t => {
+	mkdirp.sync('SRC');
+
+	await lnk('SRC', 'DEST', {type: 'junction'});
+	t.is(
+		fs.readlinkSync('DEST/SRC'),
+		isWin ? path.resolve('SRC') + path.sep : path.join('..', 'SRC')
+	);
+	assertEqualFilePath('DEST/SRC', 'SRC');
+});
+
+test.serial('should respect cwd', async () => {
 	mkdirp.sync('SRC/DEEP');
 	fs.writeFileSync('SRC/DEEP/a', '');
-	lnk('DEEP/a', '../DEST', {cwd: 'SRC'}, err => {
-		t.ifError(err);
-		assertIdenticalFile('DEST/a', 'SRC/DEEP/a');
-		t.end();
-	});
+
+	await lnk('DEEP/a', '../DEST', {cwd: 'SRC'});
+	assertIdenticalFile('DEST/a', 'SRC/DEEP/a');
 });
 
-test.serial.cb('should respect parents option', t => {
+test.serial('should respect parents option', async () => {
 	mkdirp.sync('SRC/DEEP');
 	fs.writeFileSync('SRC/DEEP/a', '');
-	lnk('DEEP/a', '../DEST', {cwd: 'SRC', parents: true}, err => {
-		t.ifError(err);
-		assertIdenticalFile('DEST/DEEP/a', 'SRC/DEEP/a');
-		t.end();
-	});
+
+	await lnk('DEEP/a', '../DEST', {cwd: 'SRC', parents: true});
+	assertIdenticalFile('DEST/DEEP/a', 'SRC/DEEP/a');
 });
 
-test.serial.cb('should hard link files in default mode', t => {
+test.serial('should hard link files in default mode', async () => {
 	mkdirp.sync('SRC');
 	fs.writeFileSync('SRC/a', '');
-	lnk('SRC/a', 'DEST', {type: 'default'}, err => {
-		t.ifError(err);
-		assertIdenticalFile('DEST/a', 'SRC/a');
-		t.end();
-	});
+
+	await lnk('SRC/a', 'DEST', {type: 'default'});
+	assertIdenticalFile('DEST/a', 'SRC/a');
 });
 
-test.serial.cb('should junction directories in default mode', t => {
+test.serial('should junction directories in default mode', async () => {
 	mkdirp.sync('SRC/DIR');
-	lnk('SRC/DIR', 'DEST', {type: 'default'}, err => {
-		t.ifError(err);
-		assertEqualFilePath('DEST/DIR', 'SRC/DIR');
-		t.end();
-	});
+
+	await lnk('SRC/DIR', 'DEST', {type: 'default'});
+	assertEqualFilePath('DEST/DIR', 'SRC/DIR');
 });
 
-test.serial.cb('should overwrite if desired', t => {
+test.serial('should overwrite if desired', async () => {
 	mkdirp.sync('SRC/DIR');
 	mkdirp.sync('DEST');
 	fs.writeFileSync('DEST/DIR', '');
-	lnk('SRC/DIR', 'DEST', {force: true}, err => {
-		t.ifError(err);
-		assertEqualFilePath('DEST/DIR', 'SRC/DIR');
-		t.end();
-	});
+
+	await lnk('SRC/DIR', 'DEST', {force: true});
+	assertEqualFilePath('DEST/DIR', 'SRC/DIR');
 });
 
-test.serial.cb('should not overwrite if not desired', t => {
+test.serial('should not overwrite if not desired', async t => {
 	mkdirp.sync('SRC/DIR');
 	mkdirp.sync('DEST');
 	fs.writeFileSync('DEST/DIR', '');
-	lnk('SRC/DIR', 'DEST', err => {
-		if (err.code === 'EEXIST') {
-			t.end();
-			return;
-		}
-		t.fail();
-	});
+
+	const err = await t.throws(lnk('SRC/DIR', 'DEST'));
+	t.is(err.code, 'EEXIST');
 });
 
-test.serial.cb('should fail on impossible TARGET', t => {
-	lnk('TARGET', 'DIRECTORY', err => {
-		t.throws(fs.statSync.bind(fs, 'DIRECTORY/TARGET'), /ENOENT/);
-		if (/TARGET/.test(err)) {
-			t.end();
-			return;
-		}
-		t.fail();
-	});
+test.serial('should fail on impossible TARGET', async t => {
+	await t.throws(lnk('TARGET', 'DIRECTORY'), /TARGET/);
+	await t.throws(() => fs.statSync('DIRECTORY/TARGET'), /ENOENT/);
 });
 
-test.serial.cb('should fail on impossible DEST', t => {
+test.serial('should fail on impossible DEST', async t => {
 	fs.writeFileSync('a', '');
 	fs.writeFileSync('DEST', '');
-	lnk('a', 'DEST', err => {
-		if (/DEST/.test(err)) {
-			t.end();
-			return;
-		}
-		t.fail();
-	});
+
+	await t.throws(lnk('a', 'DEST'), /DEST/);
 });
 
-test.serial.cb('should not overwrite if TARGET and DEST are the same', t => {
+test.serial('should not overwrite if TARGET and DEST are the same', async t => {
 	fs.writeFileSync('a', '');
 	fs.symlinkSync('.', 'b');
-	lnk('a', 'b', {force: true}, err => {
-		if (/same/.test(err)) {
-			t.end();
-			return;
-		}
-		t.fail();
-	});
+
+	await t.throws(lnk('a', 'b', {force: true}), /same/);
 });
 
-test.serial.cb('should create ELOOP', t => {
-	lnk('a', '.', {type: 'symbolic'}, err => {
-		t.ifError(err);
-		t.is(fs.readlinkSync('a'), 'a');
-		t.end();
-	});
+test.serial('should create ELOOP', async t => {
+	await lnk('a', '.', {type: 'symbolic'});
+	t.is(fs.readlinkSync('a'), 'a');
 });
 
-test.serial.cb('should be able to overwrite ELOOP', t => {
+test.serial('should be able to overwrite ELOOP', async t => {
 	fs.symlinkSync('a', 'a');
-	lnk(
-		'a', '.',
-		{type: 'symbolic', force: true},
-		err => {
-			t.ifError(err);
-			t.is(fs.readlinkSync('a'), 'a');
-			t.end();
-		}
-	);
+
+	await lnk('a', '.',	{type: 'symbolic', force: true});
+	t.is(fs.readlinkSync('a'), 'a');
 });
 
-test.serial.cb('should pass unhandled TARGET Errors', t => {
+test.serial('should pass unhandled TARGET Errors', async t => {
 	const sut = rewire('../');
-
-	sut.__set__('fs', {
-		stat: (filepath, cb) => {
-			if (path.normalize(filepath) === path.normalize('TARGET/a')) {
-				cb(new Error('BAD_THINGS_HAPPEND'));
-			} else {
-				fs.stat(filepath, cb);
-			}
+	sut.__set__('fsStatP', filepath => Promise.resolve().then(() => {
+		if (path.normalize(filepath) === path.normalize('TARGET/a')) {
+			throw new Error('BAD_THINGS_HAPPEND');
 		}
-	});
+
+		return fsP.stat(filepath);
+	}));
 
 	mkdirp.sync('TARGET');
 	fs.writeFileSync('TARGET/a', '');
 	mkdirp.sync('DIRECTORY');
 	fs.writeFileSync('DIRECTORY/a', '');
 
-	sut('TARGET/a', 'DIRECTORY', {force: true}, err => {
-		if (err) {
-			if (/BAD_THINGS_HAPPEND/.test(err)) {
-				return t.end();
-			}
-			t.ifError(err);
-		}
-		t.fail();
-	});
+	const err = await t.throws(sut('TARGET/a', 'DIRECTORY', {force: true}));
+	t.regex(err, /BAD_THINGS_HAPPEND/);
 });
 
-test.serial.cb('should pass unhandled DIRECTORY Errors', t => {
+test.serial('should pass unhandled DIRECTORY Errors', async t => {
 	const sut = rewire('../');
-
-	sut.__set__('fs', {
-		stat: (filepath, cb) => {
-			if (path.normalize(filepath) === path.normalize('DIRECTORY/a')) {
-				cb(new Error('BAD_THINGS_HAPPEND'));
-			} else {
-				fs.stat(filepath, cb);
-			}
+	sut.__set__('fsStatP', filepath => Promise.resolve().then(() => {
+		if (path.normalize(filepath) === path.normalize('DIRECTORY/a')) {
+			throw new Error('BAD_THINGS_HAPPEND');
 		}
-	});
+
+		return fsP.stat(filepath);
+	}));
 
 	mkdirp.sync('TARGET');
 	fs.writeFileSync('TARGET/a', '');
 	mkdirp.sync('DIRECTORY');
 	fs.writeFileSync('DIRECTORY/a', '');
 
-	sut('TARGET/a', 'DIRECTORY', {force: true}, err => {
-		if (err) {
-			if (/BAD_THINGS_HAPPEND/.test(err)) {
-				return t.end();
-			}
-			t.ifError(err);
-		}
-		t.fail();
-	});
+	const err = await t.throws(sut('TARGET/a', 'DIRECTORY', {force: true}));
+	t.regex(err, /BAD_THINGS_HAPPEND/);
 });
 
-test.serial.cb('should handle DIRECTORY Errors caused by race condition', t => {
+test.serial('should handle DIRECTORY Errors caused by race condition', async t => {
+	t.plan(2);
 	const sut = rewire('../');
-
-	sut.__set__('fs', {
-		stat: (filepath, cb) => {
-			if (path.normalize(filepath) === path.normalize('DIRECTORY/a')) {
-				const err = new Error('BAD_THINGS_HAPPEND');
-				err.code = 'ENOENT';
-				cb(err);
-			} else {
-				fs.stat(filepath, cb);
-			}
+	sut.__set__('fsStatP', filepath => Promise.resolve().then(() => {
+		if (path.normalize(filepath) === path.normalize('DIRECTORY/a')) {
+			const err = new Error('BAD_THINGS_HAPPEND');
+			err.code = 'ENOENT';
+			t.pass();
+			throw err;
 		}
-	});
+
+		return fsP.stat(filepath);
+	}));
 
 	mkdirp.sync('TARGET');
 	fs.writeFileSync('TARGET/a', '');
 	mkdirp.sync('DIRECTORY');
 	fs.writeFileSync('DIRECTORY/a', '');
 
-	sut('TARGET/a', 'DIRECTORY', {force: true}, err => {
-		t.ifError(err);
-		t.end();
-	});
+	await t.notThrows(sut('TARGET/a', 'DIRECTORY', {force: true}));
 });

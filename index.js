@@ -1,13 +1,17 @@
 'use strict';
 var fs = require('fs');
 const path = require('path');
+const arrify = require('arrify');
 const rimraf = require('rimraf');
 const mkdirp = require('mkdirp');
-const forEach = require('each-async');
-const series = require('array-series');
 const pathIsAbsolute = require('path-is-absolute');
+const pify = require('pify');
 
 const link = require('./link');
+
+var fsStatP = pify(fs.stat);
+const rimrafP = pify(rimraf);
+const mkdirpP = pify(mkdirp);
 
 const defaults = {
 	cwd: undefined,
@@ -40,56 +44,40 @@ const generateLinkPath = (target, directory, opts) => {
 	return path.join(directory, basename);
 };
 
-const assertSaveOverwrite = (target, linkPath, cb) => {
-	fs.stat(target, function targetStatCb(targetErr, targetStat) {
-		if (targetErr) {
-			if (targetErr.code === 'ENOENT' || targetErr.code === 'ELOOP') {
-				// target and linkPath cannot be same file
-				return cb();
-			}
-			return cb(targetErr);
+const assertSaveOverwrite = (target, linkPath) => Promise
+	.all([fsStatP(target), fsStatP(linkPath)])
+	.then(stats => {
+		const targetStat = stats[0];
+		const linkStat = stats[1];
+
+		if (targetStat.ino === linkStat.ino && targetStat.dev === linkStat.dev) {
+			throw new Error(`${target} and ${linkPath} are the same`);
 		}
-		fs.stat(linkPath, function linkPathStatCb(linkErr, linkStat) {
-			if (linkErr) {
-				if (linkErr.code === 'ENOENT' || linkErr.code === 'ELOOP') {
-					return cb();
-				}
-				return cb(linkErr);
-			}
-			if (targetStat.ino === linkStat.ino && targetStat.dev === linkStat.dev) {
-				cb(new Error('`' + target + '` and `' + linkPath + '` are the same'));
-			} else {
-				cb();
-			}
-		});
+	})
+	.catch(err => {
+		if (err.code === 'ENOENT' || err.code === 'ELOOP') {
+			// target and linkPath cannot be same file
+			return;
+		}
+
+		throw err;
 	});
-};
 
 const assertSaveOverwriteSync = (target, linkPath) => {
-	let targetStat;
-	let linkStat;
-
 	try {
-		targetStat = fs.statSync(target);
+		const targetStat = fs.statSync(target);
+		const linkStat = fs.statSync(linkPath);
+
+		if (targetStat.ino === linkStat.ino && targetStat.dev === linkStat.dev) {
+			throw new Error(`${target} and ${linkPath} are the same`);
+		}
 	} catch (err) {
 		if (err.code === 'ENOENT' || err.code === 'ELOOP') {
 			// target and linkPath cannot be same file
 			return;
 		}
-		throw err;
-	}
 
-	try {
-		linkStat = fs.statSync(linkPath);
-	} catch (err) {
-		if (err.code === 'ENOENT' || err.code === 'ELOOP') {
-			return;
-		}
 		throw err;
-	}
-
-	if (targetStat.ino === linkStat.ino && targetStat.dev === linkStat.dev) {
-		throw new Error('`' + target + '` and `' + linkPath + '` are the same');
 	}
 };
 
@@ -99,84 +87,68 @@ const assertArgument = (arg, argName) => {
 	}
 };
 
-const lnk = (targets, directory, opts, cb) => {
-	if (typeof opts === 'function') {
-		cb = opts;
-		opts = {};
-	}
-
-	assertArgument(targets, 'targets');
-	assertArgument(directory, 'directory');
-	assertArgument(cb, 'cb');
-
-	targets = Array.isArray(targets) ? targets : [targets];
+const lnk = (targets, directory, opts) => {
 	opts = Object.assign({}, defaults, opts);
 
-	const linkFn = link.get(opts.type);
-	const logLnk = (level, linkPath, targetPath, done) => {
-		opts.log(level, 'lnk', '%j => %j', linkPath, targetPath);
-		done();
-	};
-
-	const linkTarget = (target, i, done) => {
+	const linkTarget = target => {
+		const linkFn = link.get(opts.type);
 		const targetPath = preprocessTarget(target, opts);
 		const linkPath = generateLinkPath(target, directory, opts);
 
-		series([
-			mkdirp.bind(mkdirp, path.dirname(linkPath)),
-			logLnk.bind(null, 'verbose', linkPath, targetPath),	next => {
-				linkFn(targetPath, linkPath, err => {
-					if (err && err.code === 'EEXIST' && opts.force) {
-						opts.log('silly', 'lnk', 'try to rm -rf %s', linkPath);
-						series([
-							assertSaveOverwrite.bind(null, targetPath, linkPath),
-							rimraf.bind(rimraf, linkPath),
-							logLnk.bind(null, 'silly', linkPath, targetPath),
-							linkFn.bind(linkFn, targetPath, linkPath)
-						], next);
-					} else {
-						next(err);
-					}
-				});
-			}
-		], done);
+		return mkdirpP(path.dirname(linkPath))
+			.then(() => opts.log('verbose', 'lnk', '%j => %j', linkPath, targetPath))
+			.then(() => linkFn(targetPath, linkPath)
+			.catch(err => {
+				if (err.code !== 'EEXIST' || !opts.force) {
+					throw err;
+				}
+
+				return Promise.resolve()
+					.then(() => opts.log('silly', 'lnk', 'try to rm -rf %s', linkPath))
+					.then(() => assertSaveOverwrite(targetPath, linkPath))
+					.then(() => rimrafP(linkPath))
+					.then(() => opts.log('silly', 'lnk', '%j => %j', linkPath, targetPath))
+					.then(() => linkFn(targetPath, linkPath));
+			}));
 	};
 
-	logLnk('silly', targets, directory, () => {});
-	forEach(targets, linkTarget, cb);
+	return Promise.resolve()
+		.then(() => assertArgument(targets, 'targets'))
+		.then(() => assertArgument(directory, 'directory'))
+		.then(() => opts.log('silly', 'lnk', '%j => %j', targets, directory))
+		.then(() => Promise.all(arrify(targets).map(linkTarget)));
 };
 
 const lnkSync = (targets, directory, opts) => {
-	assertArgument(targets, 'targets');
-	assertArgument(directory, 'directory');
-
-	targets = Array.isArray(targets) ? targets : [targets];
 	opts = Object.assign({}, defaults, opts);
 
-	const linkFn = link.getSync(opts.type);
 	const linkTarget = target => {
+		const linkFn = link.getSync(opts.type);
 		const targetPath = preprocessTarget(target, opts);
 		const linkPath = generateLinkPath(target, directory, opts);
 
 		mkdirp.sync(path.dirname(linkPath));
+
 		try {
 			opts.log('verbose', 'lnk', '%j => %j', linkPath, targetPath);
 			linkFn(targetPath, linkPath);
 		} catch (err) {
-			if (err.code === 'EEXIST' && opts.force) {
-				opts.log('silly', 'lnk', 'try to rm -rf %s', linkPath);
-				assertSaveOverwriteSync(targetPath, linkPath);
-				rimraf.sync(linkPath);
-				opts.log('silly', 'lnk', '%j => %j', linkPath, targetPath);
-				linkFn(targetPath, linkPath);
-			} else {
+			if (err.code !== 'EEXIST' || !opts.force) {
 				throw err;
 			}
+
+			opts.log('silly', 'lnk', 'try to rm -rf %s', linkPath);
+			assertSaveOverwriteSync(targetPath, linkPath);
+			rimraf.sync(linkPath);
+			opts.log('silly', 'lnk', '%j => %j', linkPath, targetPath);
+			linkFn(targetPath, linkPath);
 		}
 	};
 
+	assertArgument(targets, 'targets');
+	assertArgument(directory, 'directory');
 	opts.log('silly', 'lnk', '%j => %j', targets, directory);
-	targets.forEach(linkTarget);
+	arrify(targets).forEach(linkTarget);
 };
 
 module.exports = lnk;
