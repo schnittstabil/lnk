@@ -3,7 +3,7 @@
 const path = require('path');
 const pify = require('pify');
 const mkdirp = require('mkdirp');
-const del = require('del');
+const rimraf = require('rimraf');
 
 const mkdirpP = pify(mkdirp);
 const BASE = process.cwd();
@@ -24,20 +24,24 @@ const before = testFileName => () => {
 	const dir = tempDir(testFileName);
 	process.chdir(BASE);
 
-	return del(dir).then(() => mkdir(dir));
+	rimraf.sync(dir);
+
+	return mkdir(dir);
 };
 
 const beforeEach = testFileName => () => {
 	const dir = tempDir(testFileName);
 	process.chdir(BASE);
 
-	return del(dir).then(() => mkdir(dir)).then(() => process.chdir(dir));
+	rimraf.sync(dir);
+
+	return mkdir(dir).then(() => process.chdir(dir));
 };
 
 const after = testFileName => () => {
 	process.chdir(BASE);
 
-	return del(tempDir(testFileName));
+	rimraf.sync(tempDir(testFileName));
 };
 
 exports.before = before;
