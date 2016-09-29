@@ -1,4 +1,4 @@
-# lnk [![Build Status](https://travis-ci.org/schnittstabil/lnk.svg?branch=master)](https://travis-ci.org/schnittstabil/lnk) [![Coverage Status](https://coveralls.io/repos/schnittstabil/lnk/badge.svg?branch=master)](https://coveralls.io/r/schnittstabil/lnk?branch=master) [![XO code style](https://img.shields.io/badge/code_style-XO-5ed9c7.svg)](https://github.com/sindresorhus/xo)
+# lnk [![Build Status](https://travis-ci.org/schnittstabil/lnk.svg?branch=master)](https://travis-ci.org/schnittstabil/lnk) [![Build status](https://ci.appveyor.com/api/projects/status/ga62hvxd522ul7bs?svg=true)](https://ci.appveyor.com/project/schnittstabil/lnk) [![Coverage Status](https://coveralls.io/repos/schnittstabil/lnk/badge.svg?branch=master)](https://coveralls.io/r/schnittstabil/lnk?branch=master) [![XO code style](https://img.shields.io/badge/code_style-XO-5ed9c7.svg)](https://github.com/sindresorhus/xo)
 
 > Create links between files cross-platform
 
@@ -15,7 +15,7 @@ $ npm install lnk --save
 
 ## Usage
 
-```sh
+```
 $ tree
 .
 └── assets
@@ -28,7 +28,7 @@ $ tree
 ```
 
 ```js
-var lnk = require('lnk');
+const lnk = require('lnk');
 
 Promise.all([
 	lnk('assets/favicon.ico', 'dist'),
@@ -38,7 +38,7 @@ Promise.all([
 
 ```
 
-```sh
+```
 $ tree
 .
 ├── assets
@@ -53,9 +53,23 @@ $ tree
 4 directories, 4 files
 ```
 
+
+## Glob support
+
+`lnk` don't support globbing by itself, `lnk` supports arrays of targets though:
+
+```js
+const lnk = require('lnk');
+const globby = require('globby');  // npm install globby
+ 
+globby('assets/*')
+	.then(assets => lnk(assets, 'dist'));
+```
+
+
 ## API
 
-`lnk` provides a cross-platform convenience wrapper for the fs link and symlink functions.
+`lnk` provides a cross-platform convenience wrapper for the [fs](https://nodejs.org/api/fs.html) `.link` and `.symlink` functions.
 
 ### lnk(targets, directory, [opts])
 
@@ -79,24 +93,20 @@ Destination directory.
 Type: `object`
 
 ##### cwd
-Type: `string`
-
+Type: `string`  
 Default: `process.cwd()`
 
 The current working directory for `targets` and `directory`.
 
 ##### force
-Type: `boolean`
-
+Type: `boolean`  
 Default: `false`
 
 Overwrite existing files.
 
 ##### type
-Type: `string`
-
-Values: `'default'`, `'hard'`, `'symbolic'`, `'junction'` or `'directory'`
-
+Type: `string`  
+Values: `'default'`, `'hard'`, `'symbolic'`, `'junction'` or `'directory'`  
 Default: `'default'`
 
 By `'default'`, `lnk` tries to create hard links, if this fails for a target because
@@ -104,8 +114,7 @@ it is a directory `lnk` tries to create a directory junction (symbolic link on
 modern OSs) for this target.
 
 ##### parents
-Type: `boolean`
-
+Type: `boolean`  
 Default: `false`
 
 Use full source file name under `directory`.
@@ -119,24 +128,10 @@ lnk('assets/style/foo.css', 'dist', {parents: true}, ...);
 ```
 
 ##### log
-Type: `function`
-
+Type: `function`  
 Default: `(level, prefix, message) => {}`
 
 A logger function, you may want to use `console.log` or `npmlog.log`, see [npmlog documentation](https://github.com/npm/npmlog) for details.
-
-## Glob support
-
-`lnk` don't support globbing by itself, however `lnk` supports arrays of targets:
-
-```js
-const lnk = require('lnk');
-const globby = require('globby');  // npm install globby
- 
-globby('assets/*')
-	.then(assets => lnk(assets, 'dist'));
-```
-
 
 ## Related
 

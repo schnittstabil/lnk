@@ -37,12 +37,10 @@ Promise.all([
 // $ tree
 // .
 // ├── assets
-// │   ├── favicon.ico
-// │   └── style
-// │       ├── app.css
-// │       └── vendor.css
+// │   ├── favicon.ico
+// │   └── style
+// │       ├── app.css
+// │       └── vendor.css
 // └── dist
 //     ├── favicon.ico
 //     └── style -> ../assets/style
-
-// 4 directories, 4 files
