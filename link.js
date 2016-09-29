@@ -6,9 +6,9 @@ const pify = require('pify');
 
 const relative = (from, to) => pathLib.relative(pathLib.dirname(from), pathLib.resolve(to));
 
-exports.hard = pify((target, path, cb) => fs.link(target, path, cb));
+exports.hard = pify(fs.link);
 
-exports.hardSync = (target, path) => fs.linkSync(target, path);
+exports.hardSync = fs.linkSync;
 
 exports.symbolic = pify((target, path, cb) => {
 	target = relative(path, target);
