@@ -54,7 +54,6 @@ test.serial('.junction should symlink relative on modern OSs', async t => {
 	let symLinked = false;
 	const sut = rewire('../link');
 
-	sut.__set__('isWin', false);
 	sut.__set__('fs', {
 		symlink: (target, path, type, cb) => {
 			symLinked = true;
@@ -72,7 +71,6 @@ test.serial('.junction should create directory junction on Windows', async t => 
 	let linked = false;
 	const sut = rewire('../link');
 
-	sut.__set__('isWin', true);
 	sut.__set__('fs', {
 		symlink: (target, path, type, cb) => {
 			linked = true;
@@ -101,7 +99,6 @@ test.serial('sync.junction should symlink relative on modern OSs', t => {
 	let symLinked = false;
 	const sut = rewire('../link');
 
-	sut.__set__('isWin', false);
 	sut.__set__('fs', {
 		symlinkSync: (target, path, type) => {
 			symLinked = true;
@@ -117,7 +114,6 @@ test.serial('sync.junction should create directory junction on Windows', t => {
 	let linked = false;
 	const sut = rewire('../link');
 
-	sut.__set__('isWin', true);
 	sut.__set__('fs', {
 		symlinkSync: (target, path, type) => {
 			linked = true;

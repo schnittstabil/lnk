@@ -4,7 +4,6 @@ const pathLib = require('path');
 
 const pify = require('pify');
 
-var isWin = process.platform === 'win32';
 const relative = (from, to) => pathLib.relative(pathLib.dirname(from), pathLib.resolve(to));
 
 exports.hard = pify((target, path, cb) => fs.link(target, path, cb));
@@ -34,19 +33,12 @@ exports.directorySync = (target, path) => {
 };
 
 exports.junction = pify((target, path, cb) => {
-	// junction paths are always absolute
-	if (!isWin) {
-		target = relative(path, target);
-	}
-
+	target = relative(path, target);
 	fs.symlink(target, path, 'junction', cb);
 });
 
 exports.junctionSync = (target, path) => {
-	// junction paths are always absolute
-	if (!isWin) {
-		target = relative(path, target);
-	}
+	target = relative(path, target);
 
 	return fs.symlinkSync(target, path, 'junction');
 };

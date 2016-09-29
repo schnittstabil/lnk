@@ -61,6 +61,7 @@ test.serial('should junction link a directory', t => {
 
 	lnk.sync('SRC', 'DEST', {type: 'junction'});
 
+	// junction paths are always absolute on windows
 	t.is(
 		fs.readlinkSync('DEST/SRC'),
 		isWin ? path.resolve('SRC') + path.sep : path.join('..', 'SRC')
