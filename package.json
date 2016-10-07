@@ -39,20 +39,19 @@
     "rimraf": "^2.5.4"
   },
   "devDependencies": {
-    "ava": "^0.16",
+    "ava": "*",
     "coveralls": "^2.11",
-    "execa": "^0.4.0",
+    "execa": "*",
     "nyc": "^8.3.0",
     "rewire": "^2.3",
     "uuid": "^2.0",
-    "xo": "^0.16.0"
+    "xo": "*"
   },
   "main": "index.js",
   "bin": {
     "lnk": "./index.js"
   },
   "files": [
-    "cli.js",
     "index.js",
     "link.js"
   ],
