@@ -47,10 +47,6 @@
     "uuid": "^2.0",
     "xo": "*"
   },
-  "main": "index.js",
-  "bin": {
-    "lnk": "./index.js"
-  },
   "files": [
     "index.js",
     "link.js"
