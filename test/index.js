@@ -156,14 +156,17 @@ test.serial('should be able to overwrite ELOOP', async t => {
 });
 
 test.serial('should pass unhandled TARGET Errors', async t => {
+	const assertSaveOverwrite = rewire('../assert-save-overwrite');
 	const sut = rewire('../');
-	sut.__set__('fsStatP', filepath => Promise.resolve().then(() => {
+
+	assertSaveOverwrite.__set__('fsStatP', filepath => Promise.resolve().then(() => {
 		if (path.normalize(filepath) === path.normalize('TARGET/a')) {
 			throw new Error('BAD_THINGS_HAPPEND');
 		}
 
 		return fsP.stat(filepath);
 	}));
+	sut.__set__('assertSaveOverwrite', assertSaveOverwrite);
 
 	mkdirp.sync('TARGET');
 	fs.writeFileSync('TARGET/a', '');
@@ -175,14 +178,17 @@ test.serial('should pass unhandled TARGET Errors', async t => {
 });
 
 test.serial('should pass unhandled DIRECTORY Errors', async t => {
+	const assertSaveOverwrite = rewire('../assert-save-overwrite');
 	const sut = rewire('../');
-	sut.__set__('fsStatP', filepath => Promise.resolve().then(() => {
+
+	assertSaveOverwrite.__set__('fsStatP', filepath => Promise.resolve().then(() => {
 		if (path.normalize(filepath) === path.normalize('DIRECTORY/a')) {
 			throw new Error('BAD_THINGS_HAPPEND');
 		}
 
 		return fsP.stat(filepath);
 	}));
+	sut.__set__('assertSaveOverwrite', assertSaveOverwrite);
 
 	mkdirp.sync('TARGET');
 	fs.writeFileSync('TARGET/a', '');
@@ -195,8 +201,10 @@ test.serial('should pass unhandled DIRECTORY Errors', async t => {
 
 test.serial('should handle DIRECTORY Errors caused by race condition', async t => {
 	t.plan(2);
+	const assertSaveOverwrite = rewire('../assert-save-overwrite');
 	const sut = rewire('../');
-	sut.__set__('fsStatP', filepath => Promise.resolve().then(() => {
+
+	assertSaveOverwrite.__set__('fsStatP', filepath => Promise.resolve().then(() => {
 		if (path.normalize(filepath) === path.normalize('DIRECTORY/a')) {
 			const err = new Error('BAD_THINGS_HAPPEND');
 			err.code = 'ENOENT';
@@ -206,6 +214,7 @@ test.serial('should handle DIRECTORY Errors caused by race condition', async t =
 
 		return fsP.stat(filepath);
 	}));
+	sut.__set__('assertSaveOverwrite', assertSaveOverwrite);
 
 	mkdirp.sync('TARGET');
 	fs.writeFileSync('TARGET/a', '');

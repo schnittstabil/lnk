@@ -34,7 +34,6 @@
   "dependencies": {
     "arrify": "^1.0.1",
     "mkdirp": "^0.5.0",
-    "path-is-absolute": "^1.0.0",
     "pify": "^2.3",
     "rimraf": "^2.5.4"
   },
@@ -42,18 +41,20 @@
     "ava": "*",
     "coveralls": "^2.11",
     "execa": "*",
-    "nyc": "^8.3.0",
+    "nyc": "^10.0",
     "rewire": "^2.3",
-    "uuid": "^2.0",
+    "uuid": "^3.0",
     "xo": "*"
   },
   "files": [
+    "assert-save-overwrite.js",
     "index.js",
-    "link.js"
+    "link.js",
+    "options.js"
   ],
   "scripts": {
-    "test": "xo && nyc ava",
-    "clean": "rimraf .nyc_output/ coverage/",
+    "test": "xo && nyc ava && test/_usage.js",
+    "clean": "rimraf .nyc_output/ coverage/ temp/",
     "coverage-html": "nyc ava && nyc report --reporter=html"
   }
 }

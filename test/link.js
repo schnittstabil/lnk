@@ -16,7 +16,7 @@ test.after(after(__filename));
 const isFunction = (t, value) => {
 	t.is(typeof value, 'function');
 };
-isFunction.title = (_, value) => `.${value} should be a function`;
+isFunction.title = providedTitle => `${providedTitle} should be a function`;
 
 const includes = (t, array, searchElement) => {
 	t.not(array.indexOf(searchElement), -1);
@@ -28,9 +28,9 @@ const notIncludes = (t, array, searchElement) => {
 };
 notIncludes.title = (providedTitle, _, searchElement) => `${providedTitle} should include ${searchElement}`;
 
-test.serial(isFunction, link.get);
-test.serial(isFunction, link.getSync);
-test.serial(isFunction, link.getTypes);
+test.serial('link.get', isFunction, link.get);
+test.serial('link.getSync', isFunction, link.getSync);
+test.serial('link.getTypes', isFunction, link.getTypes);
 
 test.serial('getTypes()', includes, link.getTypes(), 'default');
 

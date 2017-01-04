@@ -26,13 +26,10 @@ spawnSync('tree', {stdio: 'inherit'});
 //         ├── app.css
 //         └── vendor.css
 
-Promise.all([
-	lnk('assets/favicon.ico', 'dist'),
-	lnk('assets/style', 'dist')
-])
-.then(() => console.log('done'))
-.catch(err => console.error(err))
-.then(() => spawnSync('tree', {stdio: 'inherit'}));
+lnk(['assets/favicon.ico', 'assets/style'], 'dist')
+	.then(() => console.log('done'))
+	.catch(err => console.error(err))
+	.then(() => spawnSync('tree', {stdio: 'inherit'}));
 
 // $ tree
 // .

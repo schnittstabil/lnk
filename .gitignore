@@ -1,7 +1,8 @@
 /.nyc_output/
 /coverage/
-/test/temp/
-/node_modules/
 /logs/
+/node_modules/
+/temp/
+/test/temp/
 /*.log
 /lnk-*.*.*.tgz

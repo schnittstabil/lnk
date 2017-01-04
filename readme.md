@@ -30,12 +30,8 @@ $ tree
 ```js
 const lnk = require('lnk');
 
-Promise.all([
-	lnk('assets/favicon.ico', 'dist'),
-	lnk('assets/style', 'dist')
-])
-.then(() => console.log('done'));
-
+lnk(['assets/favicon.ico', 'assets/style'], 'dist')
+	.then(() => console.log('done'));
 ```
 
 ```
@@ -61,7 +57,7 @@ $ tree
 ```js
 const lnk = require('lnk');
 const globby = require('globby');  // npm install globby
- 
+
 globby('assets/*')
 	.then(assets => lnk(assets, 'dist'));
 ```
@@ -69,7 +65,7 @@ globby('assets/*')
 
 ## API
 
-`lnk` provides a cross-platform convenience wrapper for the [fs](https://nodejs.org/api/fs.html) `.link` and `.symlink` functions.
+`lnk` provides a cross-platform convenience wrapper for the [`fs.link`](https://nodejs.org/api/fs.html#fs_fs_link_existingpath_newpath_callback) and [`fs.symlink`](https://nodejs.org/api/fs.html#fs_fs_symlink_target_path_type_callback) functions.
 
 ### lnk(targets, directory, [opts])
 
@@ -80,7 +76,7 @@ Returns a `Promise`.
 Synchronous version of `lnk`.
 
 #### targets
-Type: `string` or `array` of `string`s
+Type: `string|string[]`
 
 Targets of the links.
 
@@ -93,20 +89,20 @@ Destination directory.
 Type: `object`
 
 ##### cwd
-Type: `string`  
+Type: `string`<br>
 Default: `process.cwd()`
 
 The current working directory for `targets` and `directory`.
 
 ##### force
-Type: `boolean`  
+Type: `boolean`<br>
 Default: `false`
 
 Overwrite existing files.
 
 ##### type
-Type: `string`  
-Values: `'default'`, `'hard'`, `'symbolic'`, `'junction'` or `'directory'`  
+Type: `string`<br>
+Values: `'default'`, `'hard'`, `'symbolic'`, `'junction'` or `'directory'`<br>
 Default: `'default'`
 
 By `'default'`, `lnk` tries to create hard links, if this fails for a target because
@@ -114,7 +110,7 @@ it is a directory `lnk` tries to create a directory junction (symbolic link on
 modern OSs) for this target.
 
 ##### parents
-Type: `boolean`  
+Type: `boolean`<br>
 Default: `false`
 
 Use full source file name under `directory`.
@@ -128,7 +124,7 @@ lnk('assets/style/foo.css', 'dist', {parents: true}, ...);
 ```
 
 ##### log
-Type: `function`  
+Type: `function`<br>
 Default: `(level, prefix, message) => {}`
 
 A logger function, you may want to use `console.log` or `npmlog.log`, see [npmlog documentation](https://github.com/npm/npmlog) for details.

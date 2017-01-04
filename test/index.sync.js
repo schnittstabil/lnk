@@ -151,9 +151,10 @@ test.serial('should be able to overwrite ELOOP', t => {
 });
 
 test.serial('should pass unhandled TARGET Errors', t => {
+	const assertSaveOverwrite = rewire('../assert-save-overwrite');
 	const sut = rewire('../');
 
-	sut.__set__('fs', {
+	assertSaveOverwrite.__set__('fs', {
 		statSync: filepath => {
 			if (path.normalize(filepath) === path.normalize('TARGET/a')) {
 				throw new Error('BAD_THINGS_HAPPEND');
@@ -161,6 +162,7 @@ test.serial('should pass unhandled TARGET Errors', t => {
 			return fs.statSync(filepath);
 		}
 	});
+	sut.__set__('assertSaveOverwrite', assertSaveOverwrite);
 
 	mkdirp.sync('TARGET');
 	fs.writeFileSync('TARGET/a', '');
@@ -171,9 +173,10 @@ test.serial('should pass unhandled TARGET Errors', t => {
 });
 
 test.serial('should pass unhandled DIRECTORY Errors', t => {
+	const assertSaveOverwrite = rewire('../assert-save-overwrite');
 	const sut = rewire('../');
 
-	sut.__set__('fs', {
+	assertSaveOverwrite.__set__('fs', {
 		statSync: filepath => {
 			if (path.normalize(filepath) === path.normalize('DIRECTORY/a')) {
 				throw new Error('BAD_THINGS_HAPPEND');
@@ -181,6 +184,7 @@ test.serial('should pass unhandled DIRECTORY Errors', t => {
 			return fs.statSync(filepath);
 		}
 	});
+	sut.__set__('assertSaveOverwrite', assertSaveOverwrite);
 
 	mkdirp.sync('TARGET');
 	fs.writeFileSync('TARGET/a', '');
@@ -191,9 +195,10 @@ test.serial('should pass unhandled DIRECTORY Errors', t => {
 });
 
 test.serial('should handle DIRECTORY Errors caused by race condition', () => {
+	const assertSaveOverwrite = rewire('../assert-save-overwrite');
 	const sut = rewire('../');
 
-	sut.__set__('fs', {
+	assertSaveOverwrite.__set__('fs', {
 		statSync: filepath => {
 			if (path.normalize(filepath) === path.normalize('DIRECTORY/a')) {
 				const err = new Error('BAD_THINGS_HAPPEND');
@@ -204,6 +209,7 @@ test.serial('should handle DIRECTORY Errors caused by race condition', () => {
 			return fs.statSync(filepath);
 		}
 	});
+	sut.__set__('assertSaveOverwrite', assertSaveOverwrite);
 
 	mkdirp.sync('TARGET');
 	fs.writeFileSync('TARGET/a', '');
