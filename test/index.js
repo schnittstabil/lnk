@@ -160,7 +160,7 @@ test.serial('should pass unhandled TARGET Errors', async t => {
 	const sut = rewire('../');
 
 	assertSaveOverwrite.__set__('fsStatP', filepath => Promise.resolve().then(() => {
-		if (path.normalize(filepath) === path.normalize('TARGET/a')) {
+		if (fs.realpathSync(filepath) === fs.realpathSync('TARGET/a')) {
 			throw new Error('BAD_THINGS_HAPPEND');
 		}
 
@@ -182,7 +182,7 @@ test.serial('should pass unhandled DIRECTORY Errors', async t => {
 	const sut = rewire('../');
 
 	assertSaveOverwrite.__set__('fsStatP', filepath => Promise.resolve().then(() => {
-		if (path.normalize(filepath) === path.normalize('DIRECTORY/a')) {
+		if (fs.realpathSync(filepath) === fs.realpathSync('DIRECTORY/a')) {
 			throw new Error('BAD_THINGS_HAPPEND');
 		}
 
@@ -205,7 +205,7 @@ test.serial('should handle DIRECTORY Errors caused by race condition', async t =
 	const sut = rewire('../');
 
 	assertSaveOverwrite.__set__('fsStatP', filepath => Promise.resolve().then(() => {
-		if (path.normalize(filepath) === path.normalize('DIRECTORY/a')) {
+		if (fs.realpathSync(filepath) === fs.realpathSync('DIRECTORY/a')) {
 			const err = new Error('BAD_THINGS_HAPPEND');
 			err.code = 'ENOENT';
 			t.pass();

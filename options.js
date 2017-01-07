@@ -27,10 +27,22 @@ class Options {
 			directory = path.resolve(this.cwd, directory);
 		}
 
-		const linkDir = path.join(directory, this.parents ? path.dirname(target) : '');
+		const rename = this.rename;
+		const linkDir = path.resolve(directory, this.parents ? path.dirname(target) : '');
 		const linkName = path.basename(target);
+		const pathOfLink = path.join(linkDir, linkName);
 
-		return path.join(linkDir, linkName);
+		if (rename === undefined) {
+			return pathOfLink;
+		}
+
+		const renamed = typeof rename === 'function' ? rename(path.parse(pathOfLink)) : rename;
+
+		if (typeof renamed === 'object') {
+			return path.resolve(path.format(renamed));
+		}
+
+		return path.isAbsolute(renamed) ? renamed : path.join(linkDir, renamed);
 	}
 }
 

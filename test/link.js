@@ -1,5 +1,5 @@
 /* eslint ava/no-identical-title: off */
-import {join} from 'path';
+import {join, resolve} from 'path';
 import test from 'ava';
 
 import rewire from 'rewire';
@@ -40,10 +40,11 @@ test.serial('getTypes()', notIncludes, link.getTypes(), 'getTypes');
 
 test.serial('should be extensible', async t => {
 	const type = uuid.v1();
+	const expectedLinkPath = resolve('DIRECTORY', 'TARGET');
 
 	link[type] = (target, linkPath) => new Promise(resolve => {
 		t.is(target, 'TARGET');
-		t.is(linkPath, join('DIRECTORY', 'TARGET'));
+		t.is(linkPath, expectedLinkPath);
 		resolve();
 	});
 
@@ -89,7 +90,7 @@ test.serial('sync should be extensible (globally)', t => {
 
 	link[type + 'Sync'] = (target, linkPath) => {
 		t.is(target, 'TARGET');
-		t.is(linkPath, join('DIRECTORY', 'TARGET'));
+		t.is(linkPath, resolve('DIRECTORY', 'TARGET'));
 	};
 
 	lnk.sync('TARGET', 'DIRECTORY', {type: type});

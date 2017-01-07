@@ -123,6 +123,82 @@ lnk('assets/style/foo.css', 'dist/assets/style', ...);
 lnk('assets/style/foo.css', 'dist', {parents: true}, ...);
 ```
 
+##### rename
+Type: `string|object|function(object):(string|object)`
+
+Filepath or function mapping a [_path object_](https://nodejs.org/api/path.html#path_path_parse_path) to a filename or _path object_; used to modify the path of the link before creating.
+
+
+###### Basic Example
+
+```
+$ tree
+.
+└── assets
+    ├── favicon.ICO
+    └── style
+        ├── app.css
+        └── vendor.css
+```
+
+```js
+const path = require('path');
+
+Promise.all([
+	lnk('assets/style', 'dist', {rename: 'css'}),
+	lnk('assets/favicon.ICO', 'dist', {rename: pathOfLink => pathOfLink.base.toLowerCase()})
+]).then(() => console.log('done'));
+```
+
+```
+$ tree
+.
+├── assets
+│   ├── favicon.ICO
+│   └── style
+│       ├── app.css
+│       └── vendor.css
+└── dist
+    ├── css -> ../assets/style // symlink; directory junction on windows
+    └── favicon.ico            // hard link to assets/favicon.ICO
+```
+
+###### Sophisticated Example
+
+```
+$ tree
+.
+└── assets
+    ├── favicon.ico
+    └── style
+        ├── app.css
+        └── vendor.css
+```
+
+```js
+const rename = pathOfLink => Object.assign(pathOfLink, {
+	dir: path.join(pathOfLink.dir, '42'),
+	base: `prefix-${pathOfLink.name}` + pathOfLink.ext.toLowerCase()
+});
+
+lnk(['assets/favicon.ico', 'assets/style'], 'dist', {rename})
+	.then(() => console.log('done'));
+```
+
+```
+$ tree
+.
+├── assets
+│   ├── favicon.ico
+│   └── style
+│       ├── app.css
+│       └── vendor.css
+└── dist
+    └── 42
+        ├── prefix-favicon.ico                 // hard link to assets/favicon.ico
+        └── prefix-style -> ../../assets/style // symlink; directory junction on windows
+```
+
 ##### log
 Type: `function`<br>
 Default: `(level, prefix, message) => {}`

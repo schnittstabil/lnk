@@ -3,12 +3,14 @@
 
 const spawnSync = require('child_process').spawnSync;
 const fs = require('fs');
+const chalk = require('chalk');
 const rimraf = require('rimraf');
 const mkdirp = require('mkdirp');
 const globby = require('globby');  // npm install globby
 
 const lnk = require('../');
 
+console.log(chalk.bgBlue(__filename));
 process.chdir(__dirname);
 rimraf.sync('temp/_globby-usage');
 mkdirp.sync('temp/_globby-usage/assets/style');

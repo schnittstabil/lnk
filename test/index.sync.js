@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path from 'path';
+import {join, resolve, sep} from 'path';
 import test from 'ava';
 
 import mkdirp from 'mkdirp';
@@ -64,7 +64,7 @@ test.serial('should junction link a directory', t => {
 	// junction paths are always absolute on windows
 	t.is(
 		fs.readlinkSync('DEST/SRC'),
-		isWin ? path.resolve('SRC') + path.sep : path.join('..', 'SRC')
+		isWin ? resolve('SRC') + sep : join('..', 'SRC')
 	);
 	assertEqualFilePath('DEST/SRC', 'SRC');
 });
@@ -156,7 +156,7 @@ test.serial('should pass unhandled TARGET Errors', t => {
 
 	assertSaveOverwrite.__set__('fs', {
 		statSync: filepath => {
-			if (path.normalize(filepath) === path.normalize('TARGET/a')) {
+			if (fs.realpathSync(filepath) === fs.realpathSync('TARGET/a')) {
 				throw new Error('BAD_THINGS_HAPPEND');
 			}
 			return fs.statSync(filepath);
@@ -178,7 +178,7 @@ test.serial('should pass unhandled DIRECTORY Errors', t => {
 
 	assertSaveOverwrite.__set__('fs', {
 		statSync: filepath => {
-			if (path.normalize(filepath) === path.normalize('DIRECTORY/a')) {
+			if (fs.realpathSync(filepath) === fs.realpathSync('DIRECTORY/a')) {
 				throw new Error('BAD_THINGS_HAPPEND');
 			}
 			return fs.statSync(filepath);
@@ -200,7 +200,7 @@ test.serial('should handle DIRECTORY Errors caused by race condition', () => {
 
 	assertSaveOverwrite.__set__('fs', {
 		statSync: filepath => {
-			if (path.normalize(filepath) === path.normalize('DIRECTORY/a')) {
+			if (fs.realpathSync(filepath) === fs.realpathSync('DIRECTORY/a')) {
 				const err = new Error('BAD_THINGS_HAPPEND');
 				err.code = 'ENOENT';
 				throw err;

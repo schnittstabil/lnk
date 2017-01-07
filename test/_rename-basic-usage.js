@@ -11,11 +11,11 @@ const lnk = require('../');
 
 console.log(chalk.bgBlue(__filename));
 process.chdir(__dirname);
-rimraf.sync('temp/_usage');
-mkdirp.sync('temp/_usage/assets/style');
-process.chdir('temp/_usage');
+rimraf.sync('temp/_rename-basic-usage');
+mkdirp.sync('temp/_rename-basic-usage/assets/style');
+process.chdir('temp/_rename-basic-usage');
 
-fs.writeFileSync('assets/favicon.ico', 'favicon.ico');
+fs.writeFileSync('assets/favicon.ICO', 'favicon.ICO');
 fs.writeFileSync('assets/style/app.css', 'app.css');
 fs.writeFileSync('assets/style/vendor.css', 'vendor.css');
 
@@ -23,23 +23,25 @@ spawnSync('tree', {stdio: 'inherit'});
 // $ tree
 // .
 // └── assets
-//     ├── favicon.ico
+//     ├── favicon.ICO
 //     └── style
 //         ├── app.css
 //         └── vendor.css
 
-lnk(['assets/favicon.ico', 'assets/style'], 'dist')
-	.then(() => console.log('done'))
-	.catch(err => console.error(err))
-	.then(() => spawnSync('tree', {stdio: 'inherit'}));
+Promise.all([
+	lnk('assets/style', 'dist', {rename: 'css'}),
+	lnk('assets/favicon.ICO', 'dist', {rename: pathOfLink => pathOfLink.base.toLowerCase()})
+]).then(() => console.log('done'))
+.catch(err => console.error(err))
+.then(() => spawnSync('tree', {stdio: 'inherit'}));
 
 // $ tree
 // .
 // ├── assets
-// │   ├── favicon.ico
+// │   ├── favicon.ICO
 // │   └── style
 // │       ├── app.css
 // │       └── vendor.css
 // └── dist
-//     ├── favicon.ico
-//     └── style -> ../assets/style
+//     ├── css -> ../assets/style
+//     └── favicon.ico
