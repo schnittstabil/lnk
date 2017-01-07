@@ -52,14 +52,14 @@ $ tree
 
 ## Glob support
 
-`lnk` don't support globbing by itself, `lnk` supports arrays of targets though:
+`lnk` don't support globbing by itself, `lnk` supports arrays of targets and Promises which resolve to these though:
 
 ```js
 const lnk = require('lnk');
 const globby = require('globby');  // npm install globby
 
-globby('assets/*')
-	.then(assets => lnk(assets, 'dist'));
+lnk(globby('assets/*'), 'dist')
+	.then(() => console.log('done'));
 ```
 
 
@@ -78,7 +78,7 @@ Synchronous version of `lnk`.
 #### targets
 Type: `string|string[]`
 
-Targets of the links.
+Targets of the links. `lnk()` additionally supports `Promise<string|string[]>`.
 
 #### directory
 Type: `string`

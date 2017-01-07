@@ -41,6 +41,7 @@
     "ava": "*",
     "coveralls": "^2.11",
     "execa": "*",
+    "globby": "^6.1.0",
     "nyc": "^10.0",
     "rewire": "^2.3",
     "uuid": "^3.0",
@@ -53,7 +54,7 @@
     "options.js"
   ],
   "scripts": {
-    "test": "xo && nyc ava && test/_usage.js",
+    "test": "xo && nyc ava && test/_usage.js && test/_globby-usage.js",
     "clean": "rimraf .nyc_output/ coverage/ temp/",
     "coverage-html": "nyc ava && nyc report --reporter=html"
   }
